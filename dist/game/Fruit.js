@@ -30,8 +30,8 @@ export class Fruit {
         this.body = this.physicsWorld.createRigidBody(bodyDesc);
         const colliderDesc = ColliderDesc.ball(this.radius)
             .setRestitution(0.25)
-            .setFriction(0.5)
-            .setMass(0.0125)
+            .setFriction(0.35)
+            .setMass(0.1)
             // *** Enable collision events for this collider ***
             .setActiveEvents(ActiveEvents.COLLISION_EVENTS);
         this.collider = this.physicsWorld.createCollider(colliderDesc, this.body);
