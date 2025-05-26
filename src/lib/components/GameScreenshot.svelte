@@ -1,14 +1,14 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 
+	const { gameRef } = $props();
+
 	let screenshotDataUrl = $state<string | null>(null);
 	let isLoading = $state(true); // Added state for loading indicator
 	let errorMessage = $state<string | null>(null); // Optional: for error handling
 
 	onMount(async () => {
-		const gameplayArea = document.querySelector('.gameplay-area');
-
-		if (!gameplayArea) {
+		if (!gameRef) {
 			console.error('Gameplay area not found!');
 			errorMessage = 'Could not find the gameplay area to screenshot.';
 			isLoading = false;
@@ -17,7 +17,7 @@
 
 		try {
 			const { toPng } = await import('html-to-image');
-			screenshotDataUrl = await toPng(gameplayArea as HTMLElement, { fontEmbedCSS: '' });
+			screenshotDataUrl = await toPng(gameRef as HTMLElement, { fontEmbedCSS: '' });
 		} catch (error) {
 			console.error('Failed to generate screenshot:', error);
 			errorMessage = 'Failed to generate screenshot.';

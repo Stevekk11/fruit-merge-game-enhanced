@@ -43,6 +43,9 @@
 	let gameBoundingRect = useBoundingRect();
 	let cursorPosition = useCursorPosition();
 
+	$effect(() => {
+		setContext('gameRef', gameRef); // used for postgame screenshot
+	});
 	setContext('imagesPath', imagesPath);
 	setContext('soundsPath', soundsPath);
 
