@@ -276,8 +276,8 @@ export class GameState {
 				return;
 			}
 
-			// Check if fruits are the same type and not the largest
-			if (fruitA.fruitIndex === fruitB.fruitIndex && fruitA.fruitIndex < FRUITS.length - 1) {
+			// Check if fruits are the same type
+			if (fruitA.fruitIndex === fruitB.fruitIndex) {
 				// Queue this pair for merging
 				console.log(
 					`Collision Event: Queueing merge for type ${fruitA.fruitIndex} (handles ${handle1}, ${handle2})`
@@ -344,7 +344,7 @@ export class GameState {
 			y: (posA.y + posB.y) / 2
 		};
 
-		const nextIndex = fruitA.fruitIndex + 1;
+		const nextIndex = fruitA.fruitIndex === FRUITS.length - 1 ? 0 : fruitA.fruitIndex + 1;
 		const nextFruitType = FRUITS[nextIndex];
 		if (!nextFruitType) {
 			console.error(`Invalid next fruit index during merge: ${nextIndex}`);
