@@ -135,7 +135,7 @@
 		box-shadow: hsla(0, 0%, 0%, 0.2) 0 2px 2px;
 
 		/* Sizing and Scrolling */
-		min-width: 60cqi;
+		min-width: 65cqi;
 		max-width: 100%; /* Respect wrapper padding */
 		max-height: 100%; /* Respect wrapper padding */
 		overflow: auto; /* Allow scrolling if content exceeds size */
