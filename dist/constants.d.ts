@@ -6,6 +6,7 @@ export declare const WALL_THICKNESS: number;
 export declare const MERGE_THRESHOLD = 100;
 export declare const GAME_OVER_HEIGHT: number;
 export declare const FRUIT_NAMES: string[];
+export declare const FRUIT_SIZES: number[];
 export interface FruitData {
     name: string;
     color: string;
