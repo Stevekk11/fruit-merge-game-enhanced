@@ -116,11 +116,10 @@
 	.custom-backdrop {
 		position: absolute; /* Position relative to the wrapper */
 		inset: 0; /* Cover the entire wrapper */
-		background-color: var(--color-background); /* Or your backdrop color */
-		opacity: 0.9;
-		backdrop-filter: blur(10px);
+		background-color: color-mix(in lch, var(--color-background) 90%, rgba(255, 255, 255, 0));
 		z-index: 1; /* Behind the modal body */
 		pointer-events: auto; /* Make backdrop clickable */
+		backdrop-filter: blur(5px);
 	}
 
 	.modal-body {
