@@ -20,6 +20,16 @@ export const FRUIT_NAMES: string[] = [
 	'watermelon'
 ];
 
+// SUIKA FRUIT SIZES (original)
+// export const FRUIT_SIZES: number[] = [
+// 	6.76, 8.86, 13.66, 14.41, 19.07, 25.23, 28.38, 35.29, 39.34, 48.57, 57.81
+// ];
+
+// Manual, based on suika
+export const FRUIT_SIZES: number[] = [
+	6.76, 8.86, 11.55, 14.41, 19.07, 23.54, 28.38, 34.93, 39.34, 48.57, 57.81
+];
+
 export interface FruitData {
 	name: string;
 	color: string;
@@ -30,9 +40,8 @@ export interface FruitData {
 
 export const FRUITS: FruitData[] = [];
 
-let currentSize = 3.75;
-
 for (let i = 0; i < FRUIT_NAMES.length; i++) {
+	const currentSize = FRUIT_SIZES[i] / 2;
 	const currentRadius = GAME_WIDTH * (currentSize / 100);
 	const fruitName = FRUIT_NAMES[i];
 	FRUITS.push({
@@ -42,8 +51,6 @@ for (let i = 0; i < FRUIT_NAMES.length; i++) {
 		radius: currentRadius,
 		points: (i + 1) * 2
 	});
-
-	currentSize = currentSize * 1.25;
 }
 
 export const DEFAULT_IMAGES_PATH = '/images';
