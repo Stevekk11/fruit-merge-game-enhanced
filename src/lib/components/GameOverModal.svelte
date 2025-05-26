@@ -9,7 +9,7 @@
 	const { open, score, scores = [], onClose } = $props();
 
 	const gameRef = getContext('gameRef');
-	console.log('gameRef', gameRef);
+
 	function handleStartClick() {
 		onClose();
 	}
