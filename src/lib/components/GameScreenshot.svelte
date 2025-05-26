@@ -45,16 +45,12 @@
 		aspect-ratio: 2 / 3;
 		border-radius: 0.5em;
 		overflow: hidden;
-		display: flex;
-		justify-content: center;
-		align-items: center;
 		background-color: var(--color-background);
 	}
 
 	.image {
 		display: block;
-		width: 100%;
-		height: 100%; /* Ensure image fills the container */
+		max-width: 100%;
 		object-fit: cover; /* To maintain aspect ratio and fill */
 	}
 
