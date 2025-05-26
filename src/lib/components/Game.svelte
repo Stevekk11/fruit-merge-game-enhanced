@@ -234,7 +234,7 @@
 		width: clamp(100px, 100%, 700px);
 		max-width: calc(100svh * 2 / 3);
 
-		@media (max-width: 480px) {
+		@media (aspect-ratio < 0.65) {
 			max-width: calc(100svh * 1 / 2);
 		}
 	}
@@ -275,6 +275,7 @@
 		--color-text: hsl(0, 0%, 20%);
 		--color-light-text: hsl(0, 0%, 35%);
 		--color-very-light-text: hsl(0, 0%, 50%);
+
 		--border-radius: 1em;
 
 		display: grid;
@@ -297,7 +298,7 @@
 		font-style: normal;
 		font-weight: 400;
 
-		@media (max-width: 480px) {
+		@media (aspect-ratio < 0.65) {
 			grid-template-columns: 1fr;
 			grid-template-areas: 'sidebar' 'gameplay' 'header';
 		}
