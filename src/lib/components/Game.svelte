@@ -300,6 +300,7 @@
 		font-optical-sizing: auto;
 		font-style: normal;
 		font-weight: 400;
+		line-height: 1.5;
 
 		@media (aspect-ratio < 0.65) {
 			grid-template-columns: 1fr;
@@ -308,6 +309,10 @@
 
 		:global(*) {
 			box-sizing: border-box;
+		}
+
+		:global(a) {
+			font-weight: normal;
 		}
 
 		:global(b, strong, h1, h2, h3, h4, h5, h6) {

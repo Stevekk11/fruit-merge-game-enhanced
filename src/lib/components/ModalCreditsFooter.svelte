@@ -25,5 +25,6 @@
 
 	.tk-logo {
 		font-size: 0.8em;
+		display: inline-block;
 	}
 </style>
