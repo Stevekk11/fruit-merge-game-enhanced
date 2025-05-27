@@ -16,8 +16,8 @@
 		}
 
 		try {
-			const { toPng } = await import('html-to-image');
-			screenshotDataUrl = await toPng(gameRef as HTMLElement, { fontEmbedCSS: '' });
+			const { domToPng } = await import('modern-screenshot');
+			screenshotDataUrl = await domToPng(gameRef as HTMLElement, { font: false });
 		} catch (error) {
 			console.error('Failed to generate screenshot:', error);
 			errorMessage = 'Failed to generate screenshot.';

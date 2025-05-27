@@ -23,17 +23,17 @@
 	});
 </script>
 
-<div
+<img
 	class="fruit"
+	alt={name}
+	src="{imagesPath}/fruits/{name}.png"
 	style:width
-	style:background-image="url('{imagesPath}/fruits/{name}.png')"
-	style:display={display === 'inline' ? 'inline-block' : display}>
-</div>
+	style:display={display === 'inline' ? 'inline-block' : display}
+	draggable={false} />
 
 <style>
 	.fruit {
 		aspect-ratio: 1 / 1;
 		user-select: none;
-		background-size: 100%;
 	}
 </style>
