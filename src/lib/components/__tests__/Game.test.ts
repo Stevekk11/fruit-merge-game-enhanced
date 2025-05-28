@@ -55,9 +55,15 @@ const MOCK_FRUITS = [
 
 vi.mock('../../constants', async () => {
 	const actual = await vi.importActual('../../constants');
+	// Define fruitsForMock for the mock's internal use to avoid ReferenceError
+	const fruitsForMock = [
+		{ id: 0, name: 'FruitA', radius: 0.1, points: 10, image: 'images/fruitA.webp', color: 'red' },
+		{ id: 1, name: 'FruitB', radius: 0.12, points: 20, image: 'images/fruitB.webp', color: 'yellow' },
+		{ id: 2, name: 'FruitC', radius: 0.15, points: 30, image: 'images/fruitC.webp', color: 'orange' }
+	];
 	return {
 		...(actual as any),
-		FRUITS: MOCK_FRUITS
+		FRUITS: fruitsForMock // Use the internally defined constant
 	};
 });
 
