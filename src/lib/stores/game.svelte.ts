@@ -50,6 +50,7 @@ export interface MergeEffectData {
 	duration: number;
 }
 export interface FruitState {
+	id: number; // Add this line
 	x: number;
 	y: number;
 	rotation: number;
@@ -171,6 +172,7 @@ export class GameState {
 			.map((fruit) => {
 				if (!fruit.body.isValid()) return null;
 				return {
+					id: fruit.id, // Add this line
 					x: fruit.body.translation().x,
 					y: fruit.body.translation().y,
 					rotation: fruit.body.rotation(),
