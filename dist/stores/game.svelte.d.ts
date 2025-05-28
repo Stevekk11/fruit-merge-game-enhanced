@@ -11,6 +11,7 @@ export interface MergeEffectData {
     duration: number;
 }
 export interface FruitState {
+    id: number;
     x: number;
     y: number;
     rotation: number;

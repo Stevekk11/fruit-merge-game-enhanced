@@ -116,6 +116,7 @@ export class GameState {
             if (!fruit.body.isValid())
                 return null;
             return {
+                id: fruit.id, // Add this line
                 x: fruit.body.translation().x,
                 y: fruit.body.translation().y,
                 rotation: fruit.body.rotation(),

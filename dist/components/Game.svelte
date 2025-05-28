@@ -200,7 +200,7 @@
 				<!-- Rendered fruits - Use a unique identifier if available, otherwise index -->
 				<!-- Assuming FruitState doesn't have a stable ID, index might be necessary -->
 				<!-- If FruitState *does* get an ID (e.g., collider handle), use fruit.id -->
-				{#each gameState.fruitsState as fruitState, i (i)}
+				{#each gameState.fruitsState as fruitState (fruitState.id)}
 					{@const fruit = FRUITS[fruitState.fruitIndex]}
 					<GameEntity
 						x={fruitState.x}
