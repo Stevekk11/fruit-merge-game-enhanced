@@ -1,6 +1,6 @@
 <script lang="ts">
-	import type { GameState } from '$lib/stores/game.svelte'; // Adjust if GameState type is not directly exportable or path is different
-	import { FRUITS, GAME_WIDTH, GAME_OVER_HEIGHT } from '$lib/constants';
+	import type { GameState } from '../stores/game.svelte'; // Adjust if GameState type is not directly exportable or path is different
+	import { FRUITS, GAME_WIDTH, GAME_OVER_HEIGHT } from '../constants';
 
 	const { gameState } = $props<{ gameState: GameState }>();
 

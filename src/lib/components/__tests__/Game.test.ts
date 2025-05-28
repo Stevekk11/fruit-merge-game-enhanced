@@ -17,7 +17,7 @@ class MockGameState {
 	status = 'uninitialized';
 	currentFruitIndex = 0;
 	nextFruitIndex = 1;
-	fruitsState: any[] = [];
+	fruitsState = $state<any[]>([]);
 	mergeEffects: any[] = [];
 	dropCount = 0;
 	audioManager = { isMuted: false, toggleMute: vi.fn() };
