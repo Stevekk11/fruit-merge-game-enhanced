@@ -1,10 +1,16 @@
 # Subak Game 🍉
 
+![Subak Game with a pile of fruit](static/opengraph.png)
+
 ## Introduction
 
 Subak Game is a fruit merging puzzle game, inspired by the popular [Suika Game](https://www.nintendo.com/us/store/products/suika-game-switch/) (Watermelon Game). The original game, "Merge Big Watermelon" (合成大西瓜), was created by Meadow Science (米兜科技).
 
 This project was created as a fun memento of a team off-site where I accidentally got my entire team hooked on Suika game.
+
+## Gameplay
+
+![Subak Game gameplay screenshot, featuring many fruit in the gameplay area](static/images/subak-game-screenshot.png)
 
 ## Tech Stack
 
