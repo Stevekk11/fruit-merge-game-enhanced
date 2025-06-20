@@ -1,6 +1,10 @@
 # Subak Game 🍉
 
-![Subak Game with a pile of fruit](static/opengraph.png)
+<img
+  src="static/opengraph.png"
+  alt="Subak Game with a pile of fruit"
+  width="600"
+/>
 
 ## Introduction
 
@@ -10,7 +14,11 @@ This project was created as a fun memento of a team off-site where I accidentall
 
 ## Gameplay
 
-![Subak Game gameplay screenshot, featuring many fruit in the gameplay area](static/images/subak-game-screenshot.png)
+<img
+  src="static/images/subak-game-screenshot.png"
+  alt="Subak Game gameplay screenshot, featuring many fruit in the gameplay area"
+  width="420"
+/>
 
 ## Tech Stack
 
