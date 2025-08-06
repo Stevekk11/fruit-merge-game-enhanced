@@ -10,7 +10,8 @@
 
 	let { radius, name, display = 'block', scale = 1 }: FruitProps = $props();
 
-	const FruitImage = (await import(`../svg/${name}.svg?component`)).default;
+	const fruitImageUrl = $derived(`../svg/${name}.svg?component`);
+	const FruitImage = $derived((await import(fruitImageUrl)).default);
 
 	const width = $derived.by(() => {
 		const scaledGameWidthPx = GAME_WIDTH_PX * scale;
