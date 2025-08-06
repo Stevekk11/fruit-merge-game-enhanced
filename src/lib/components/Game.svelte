@@ -459,7 +459,6 @@
 
 	.sidebar {
 		grid-area: sidebar;
-		border-top: var(--color-border-light) 1px solid;
 	}
 
 	.header {

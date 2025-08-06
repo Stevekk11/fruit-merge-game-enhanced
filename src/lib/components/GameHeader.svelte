@@ -1,11 +1,16 @@
 <!-- App.svelte -->
-<script>
+<script lang="ts">
 	import SoundOn from '../icons/sound-on.svelte';
 	import SoundOff from '../icons/sound-off.svelte';
 	import IntroductionModal from './IntroductionModal.svelte';
 	import Fruit from './Fruit.svelte';
+	import type { GameState } from '$lib/stores/game.svelte';
 
-	const { gameState } = $props();
+	interface GameHeaderProps {
+		gameState: GameState;
+	}
+
+	const { gameState }: GameHeaderProps = $props();
 
 	let showIntroduction = $state(true);
 
@@ -17,7 +22,6 @@
 	function handleCloseIntroduction() {
 		showIntroduction = false;
 		gameState.setStatus('playing');
-		console.log('showIntroduciton', showIntroduction);
 	}
 
 	function handleMuteClick() {

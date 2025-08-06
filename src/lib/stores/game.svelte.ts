@@ -63,7 +63,7 @@ interface GameStateProps {
 export type GameStatus = 'uninitialized' | 'playing' | 'paused' | 'gameover';
 
 export class GameState {
-	audioManager: AudioManager | null = null;
+	audioManager: AudioManager | null = $state(null);
 	score: number = $state(0);
 	status: GameStatus = $state('uninitialized');
 	currentFruitIndex: number = $state(0);

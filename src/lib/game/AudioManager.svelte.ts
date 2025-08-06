@@ -22,7 +22,7 @@ interface AudioManagerProps {
 export class AudioManager {
 	private sounds: Record<string, Howl> = {};
 	private soundCooldowns: Record<string, number> = {}; // Tracks last play time
-	isMuted: boolean = $state(Howler?._muted);
+	isMuted: boolean = $state(Howler?.['_muted'] as boolean);
 
 	get isAudioContextReady() {
 		return Howler.ctx?.state === 'running';
