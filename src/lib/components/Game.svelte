@@ -34,7 +34,12 @@
 	const { imagesPath = DEFAULT_IMAGES_PATH, soundsPath = DEFAULT_SOUNDS_PATH } = $props();
 
 	// Game state reference
-	let gameState = $state<GameState | null>(null);
+	let gameState = $state<GameState | null>(
+		new GameState({
+			imagesPath,
+			soundsPath
+		})
+	);
 	let highScores = $state([]);
 	let showDebugMenu = $state(false);
 
@@ -59,16 +64,14 @@
 	}
 
 	onMount(() => {
-		gameState = new GameState({
-			imagesPath,
-			soundsPath
-		});
-
 		const urlParams = new URLSearchParams(window.location.search);
 		const isDebugQuery = urlParams.get('debug') === 'true';
 		const isLocalhost =
 			window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 		showDebugMenu = isDebugQuery && isLocalhost;
+
+		// Only initialize physics and audio on client
+		gameState.init();
 
 		return function onUnmount() {
 			gameState.destroy();
@@ -157,7 +160,6 @@
 	setContext('imagesPath', imagesPath);
 	setContext('soundsPath', soundsPath);
 	setContext('generateScreenshot', generateScreenshot);
-	setContext('gameState', gameState);
 </script>
 
 <!--
@@ -410,6 +412,8 @@
 		position: relative;
 		box-shadow: inset hsla(0, 0%, 0%, 0.2) 0 2px 2px;
 		background-color: var(--color-background-dark);
+		border-radius: 1em;
+		cursor: s-resize;
 
 		/* Removed cursor: pointer as interaction is on wrapper */
 		user-select: none;

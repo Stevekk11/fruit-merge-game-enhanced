@@ -92,15 +92,18 @@ export class GameState {
 	throttledCheckGameOver?: () => void;
 
 	constructor({ imagesPath, soundsPath }: GameStateProps) {
-		(async () => {
-			if (imagesPath) this.imagesPath = imagesPath;
-			if (soundsPath) this.soundsPath = soundsPath;
-			this.audioManager = new AudioManager({ soundsPath });
-			this.throttledCheckGameOver = throttle(this.checkGameOver, 500);
-			await this.initPhysics();
-			this.resetGame(); // resetGame will now set status to 'uninitialized'
-			// this.update() is removed, game won't auto-start
-		})();
+		if (imagesPath) this.imagesPath = imagesPath;
+		if (soundsPath) this.soundsPath = soundsPath;
+
+		this.throttledCheckGameOver = throttle(this.checkGameOver, 500);
+
+		this.resetGame(); // resetGame will now set status to 'uninitialized'
+	}
+
+	async init() {
+		const { soundsPath } = this;
+		this.audioManager = new AudioManager({ soundsPath });
+		await this.initPhysics();
 	}
 
 	update() {

@@ -39,26 +39,51 @@
 
 <Modal {open} {onClose} {append}>
 	<div class="content">
-		<h2 class="heading">Subak Game <Fruit name="watermelon" radius="1em" /></h2>
-		<div>
-			Match fruits <Fruit name="lemon" radius="1em" display="inline" /> to merge them into a bigger fruit
-			<Fruit name="orange" radius="1em" display="inline" />.<br />Try to get to a <Fruit
-				name="watermelon"
-				radius="1em"
-				display="inline" />!
-		</div>
-		<Leaderboard scores={highScores} />
+		<header class="header">
+			<div class="game-logo">
+				<div class="game-logo__fruits">
+					<Fruit name="orange" radius="1.5em" />
+					<Fruit name="watermelon" radius="4em" />
+					<Fruit name="apple" radius="2em" />
+				</div>
+				<h2 class="heading">Subak Game</h2>
+			</div>
+
+			<div>
+				Match fruits <Fruit name="lemon" radius="1em" display="inline" /> to merge them into a bigger
+				fruit
+				<Fruit name="orange" radius="1em" display="inline" />.<br />Try to get to a <Fruit
+					name="watermelon"
+					radius="1em"
+					display="inline" />!
+			</div>
+		</header>
+		<hr />
+		<section class="leaderboard">
+			<Leaderboard scores={highScores} />
+		</section>
 		<button onclick={handleStartClick}>{startButtonText}</button>
 	</div>
 </Modal>
 
 <style>
+	.game-logo {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+	}
+
+	.game-logo__fruits {
+		display: flex;
+		align-items: end;
+	}
+
 	.heading {
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		gap: 0.5em;
-		font-size: 1em;
+		font-size: 2em;
 		margin: 0;
 	}
 
@@ -67,5 +92,12 @@
 		flex-direction: column;
 		align-items: center;
 		gap: 1.5em;
+	}
+
+	.header {
+		padding-top: 1.5em;
+		display: flex;
+		flex-direction: column;
+		gap: 1em;
 	}
 </style>

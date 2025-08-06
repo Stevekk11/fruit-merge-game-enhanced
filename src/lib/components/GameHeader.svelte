@@ -17,6 +17,7 @@
 	function handleCloseIntroduction() {
 		showIntroduction = false;
 		gameState.setStatus('playing');
+		console.log('showIntroduciton', showIntroduction);
 	}
 
 	function handleMuteClick() {

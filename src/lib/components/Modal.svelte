@@ -11,14 +11,8 @@
 		append?: Snippet;
 	}
 
-	// --- Props ---
-	// `open`: Controls the visibility of the modal (bindable)
-	// `onClose`: Callback function triggered when the modal requests to be closed
-	// `children`: Slot content for the modal body
 	let { open = false, onClose = () => {}, prepend, children, append }: PropsInterface = $props();
 
-	// --- Effects ---
-	// Effect to handle the ESC key press for closing the modal
 	$effect(() => {
 		// Only add listener if the modal is open
 		if (!open) return;
@@ -49,15 +43,7 @@
 
 <!-- Render the modal structure only when `open` is true -->
 {#if open}
-	<!-- 
-    Modal Wrapper: Handles positioning (absolute) and centering.
-    It sits above the backdrop.
-  -->
 	<div class="modal-wrapper" aria-modal="true" role="dialog">
-		<!-- 
-      Custom Backdrop: Sits behind the modal content but within the wrapper.
-      Handles click-outside-to-close.
-    -->
 		<div
 			class="custom-backdrop"
 			aria-hidden="true"
@@ -65,11 +51,6 @@
 			out:fade={{ easing: quadOut, duration: 250, delay: 100 }}>
 		</div>
 
-		<!-- 
-      Modal Body: Contains the actual content and transitions.
-      Sits visually on top of the backdrop.
-      Needs `pointer-events: auto` to be interactive.
-    -->
 		<div
 			class="modal-body"
 			in:scale={{ easing: quadOut, duration: 200, delay: 50, start: 0.9 }}
@@ -81,9 +62,8 @@
 			{/if}
 
 			<div class="modal-content">
-				<!-- Close Button -->
 				<button class="close-button" onclick={requestClose} aria-label="Close dialog">
-					&times; <!-- Multiplication sign often used for 'close' -->
+					&times;
 				</button>
 
 				<!-- Slot for user content -->
@@ -169,5 +149,16 @@
 
 	.close-button:hover {
 		color: #000;
+	}
+
+	:global {
+		hr {
+			height: 0.1em;
+			width: 90%;
+			margin: 0;
+
+			border: none;
+			background-color: var(--color-border);
+		}
 	}
 </style>
