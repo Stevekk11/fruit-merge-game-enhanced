@@ -89,6 +89,7 @@ export function useCursorPosition(): {
 		// Use { passive: true } for scroll/resize for better performance
 		window.addEventListener('scroll', updateRect, { passive: true });
 		window.addEventListener('resize', updateRect, { passive: true });
+		setTimeout(() => updateRect(), 0);
 
 		// --- Cleanup Function ---
 		return () => {

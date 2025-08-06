@@ -43,19 +43,26 @@
 	let gameBoundingRect = useBoundingRect();
 	let cursorPosition = useCursorPosition();
 
-	$effect(() => {
-		setContext('gameRef', gameRef); // used for postgame screenshot
-	});
-	setContext('imagesPath', imagesPath);
-	setContext('soundsPath', soundsPath);
+	async function generateScreenshot() {
+		if (!gameRef) {
+			throw new Error('Could not find the gameplay area to screenshot.');
+		}
+
+		try {
+			const { domToPng } = await import('modern-screenshot');
+			const screenshotDataUrl = await domToPng(gameRef as HTMLElement, { font: false });
+
+			return screenshotDataUrl;
+		} catch (error) {
+			throw new Error('Failed to generate screenshot:', error);
+		}
+	}
 
 	onMount(() => {
 		gameState = new GameState({
 			imagesPath,
 			soundsPath
 		});
-
-		setContext('gameState', gameState);
 
 		const urlParams = new URLSearchParams(window.location.search);
 		const isDebugQuery = urlParams.get('debug') === 'true';
@@ -90,15 +97,17 @@
 	let isDropping = $state(false);
 
 	// Save score and load leaderboard when game is over
-	$effect(async () => {
-		if (gameState?.status === 'gameover') {
-			if (typeof gameState.score === 'number') {
-				await saveScore(gameState.score);
-				highScores = await getHighScores();
-			} else {
-				console.error('Attempted to save invalid score:', gameState.score);
+	$effect(() => {
+		(async () => {
+			if (gameState?.status === 'gameover') {
+				if (typeof gameState.score === 'number') {
+					await saveScore(gameState.score);
+					highScores = await getHighScores();
+				} else {
+					console.error('Attempted to save invalid score:', gameState.score);
+				}
 			}
-		}
+		})();
 	});
 
 	function dropCurrentFruit() {
@@ -143,6 +152,12 @@
 	function handleGameOverClose() {
 		gameState?.restartGame();
 	}
+
+	// Set context for child components to consume
+	setContext('imagesPath', imagesPath);
+	setContext('soundsPath', soundsPath);
+	setContext('generateScreenshot', generateScreenshot);
+	setContext('gameState', gameState);
 </script>
 
 <!--
@@ -154,76 +169,83 @@
 -->
 <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 <div class="game-container">
-	<div
-		class="game responsive-font-size"
-		role="application"
-		aria-label="Fruit merging game area"
-		tabindex="0">
-		<div class="header"><GameHeader {gameState} /></div>
-		<div class="sidebar"><GameSidebar {gameState} /></div>
-
-		<!-- Game Container -->
+	<svelte:boundary>
 		<div
-			class="gameplay-area"
-			bind:this={gameRef}
-			onpointerup={handleClick}
-			onkeydown={handleKeyDown}
-			aria-hidden="true">
-			<!-- aria-hidden because the wrapper handles interaction -->
+			class="game responsive-font-size"
+			role="application"
+			aria-label="Fruit merging game area"
+			tabindex="0">
+			<div class="header"><GameHeader {gameState} /></div>
+			<div class="sidebar"><GameSidebar {gameState} /></div>
 
-			<div class="restricted-area"></div>
+			<!-- Game Container -->
+			<div
+				class="gameplay-area"
+				bind:this={gameRef}
+				onpointerup={handleClick}
+				onkeydown={handleKeyDown}
+				aria-hidden="true">
+				<!-- aria-hidden because the wrapper handles interaction -->
+
+				<div class="restricted-area"></div>
+
+				{#if gameState}
+					<div class="drop-line" style:translate="{clampedMouseX - 1}px 0"></div>
+
+					<!-- Merge effects - Use effect.id as the key -->
+					{#each gameState.mergeEffects as effect (effect.id)}
+						<GameEntity x={effect.x} y={effect.y} scale={gameScale}>
+							<MergeEffect {...effect} radius={effect.radius * gameScale} />
+						</GameEntity>
+					{/each}
+
+					<!-- Preview fruit - Appears when not dropping -->
+					{#if gameState.status !== 'gameover' && !isDropping && currentFruit}
+						<div
+							class="preview-fruit"
+							aria-hidden="true"
+							style:translate="{clampedMouseX}px 0"
+							in:scale={{ opacity: 1, easing: expoOut, duration: 250 }}>
+							<!-- aria-hidden as it's purely visual feedback -->
+							<GameEntity x={0} y={GAME_OVER_HEIGHT / 2} scale={gameScale}>
+								<Fruit {...currentFruit} radius={currentFruit.radius} scale={gameScale} />
+							</GameEntity>
+						</div>
+					{/if}
+
+					<!-- Rendered fruits - Use a unique identifier if available, otherwise index -->
+					<!-- Assuming FruitState doesn't have a stable ID, index might be necessary -->
+					<!-- If FruitState *does* get an ID (e.g., collider handle), use fruit.id -->
+					{#each gameState.fruitsState as fruitState (fruitState.id)}
+						{@const fruit = FRUITS[fruitState.fruitIndex]}
+						<GameEntity
+							x={fruitState.x}
+							y={fruitState.y}
+							rotation={fruitState.rotation}
+							scale={gameScale}>
+							<Fruit {...fruit} radius={fruit.radius * gameScale} />
+						</GameEntity>
+					{/each}
+				{/if}
+			</div>
 
 			{#if gameState}
-				<div class="drop-line" style:translate="{clampedMouseX - 1}px 0"></div>
-
-				<!-- Merge effects - Use effect.id as the key -->
-				{#each gameState.mergeEffects as effect (effect.id)}
-					<GameEntity x={effect.x} y={effect.y} scale={gameScale}>
-						<MergeEffect {...effect} radius={effect.radius * gameScale} />
-					</GameEntity>
-				{/each}
-
-				<!-- Preview fruit - Appears when not dropping -->
-				{#if gameState.status !== 'gameover' && !isDropping && currentFruit}
-					<div
-						class="preview-fruit"
-						aria-hidden="true"
-						style:translate="{clampedMouseX}px 0"
-						in:scale={{ opacity: 1, easing: expoOut, duration: 250 }}>
-						<!-- aria-hidden as it's purely visual feedback -->
-						<GameEntity x={0} y={GAME_OVER_HEIGHT / 2} scale={gameScale}>
-							<Fruit {...currentFruit} radius={currentFruit.radius} scale={gameScale} />
-						</GameEntity>
-					</div>
-				{/if}
-
-				<!-- Rendered fruits - Use a unique identifier if available, otherwise index -->
-				<!-- Assuming FruitState doesn't have a stable ID, index might be necessary -->
-				<!-- If FruitState *does* get an ID (e.g., collider handle), use fruit.id -->
-				{#each gameState.fruitsState as fruitState (fruitState.id)}
-					{@const fruit = FRUITS[fruitState.fruitIndex]}
-					<GameEntity
-						x={fruitState.x}
-						y={fruitState.y}
-						rotation={fruitState.rotation}
-						scale={gameScale}>
-						<Fruit {...fruit} radius={fruit.radius * gameScale} />
-					</GameEntity>
-				{/each}
+				<GameOverModal
+					open={gameState.status === 'gameover'}
+					score={gameState.score}
+					scores={highScores}
+					onClose={handleGameOverClose} />
 			{/if}
 		</div>
 
-		{#if gameState}
-			<GameOverModal
-				open={gameState.status === 'gameover'}
-				score={gameState.score}
-				scores={highScores}
-				onClose={handleGameOverClose} />
+		{#if showDebugMenu && gameState}
+			<DebugMenu {gameState} />
 		{/if}
-	</div>
-	{#if showDebugMenu && gameState}
-		<DebugMenu {gameState} />
-	{/if}
+
+		{#snippet pending()}
+			<p>loading...</p>
+		{/snippet}
+	</svelte:boundary>
 </div>
 
 <style>

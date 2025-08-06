@@ -1,6 +1,4 @@
 <script lang="ts">
-	import { getContext } from 'svelte';
-
 	import { GAME_WIDTH, GAME_WIDTH_PX } from '../constants';
 
 	interface FruitProps {
@@ -12,7 +10,7 @@
 
 	let { radius, name, display = 'block', scale = 1 }: FruitProps = $props();
 
-	const imagesPath = getContext('imagesPath');
+	const FruitImage = (await import(`../svg/${name}.svg?component`)).default;
 
 	const width = $derived.by(() => {
 		const scaledGameWidthPx = GAME_WIDTH_PX * scale;
@@ -23,13 +21,13 @@
 	});
 </script>
 
-<img
+<div
+	data-name={name}
 	class="fruit"
-	alt={name}
-	src="{imagesPath}/fruits/{name}.png"
 	style:width
-	style:display={display === 'inline' ? 'inline-block' : display}
-	draggable={false} />
+	style:display={display === 'inline' ? 'inline-block' : display}>
+	<FruitImage style="display: block;" />
+</div>
 
 <style>
 	.fruit {

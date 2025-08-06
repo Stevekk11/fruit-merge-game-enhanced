@@ -1,14 +1,10 @@
 <script lang="ts">
-	import { getContext } from 'svelte';
-
 	import Modal from './Modal.svelte';
 	import Leaderboard from './Leaderboard.svelte';
 	import ModalCreditsFooter from './ModalCreditsFooter.svelte';
 	import GameScreenshot from './GameScreenshot.svelte';
 
 	const { open, score, scores = [], onClose } = $props();
-
-	const gameRef = getContext('gameRef');
 
 	function handleStartClick() {
 		onClose();
@@ -31,7 +27,7 @@
 				</div>
 				<Leaderboard {scores} highlightScore={score} />
 			</div>
-			<div class="screenshot"><GameScreenshot {gameRef} /></div>
+			<div class="screenshot"><GameScreenshot /></div>
 		</div>
 
 		<button onclick={handleStartClick}>Start New Game</button>

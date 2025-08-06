@@ -10,6 +10,7 @@ export function useBoundingRect() {
     onMount(() => {
         window.addEventListener('resize', update);
         window.addEventListener('scroll', update);
+        setTimeout(() => update(), 0);
         update();
     });
     // so... when ref changes, fire

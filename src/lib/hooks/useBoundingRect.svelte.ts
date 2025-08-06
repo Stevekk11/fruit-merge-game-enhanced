@@ -12,6 +12,7 @@ export function useBoundingRect() {
 	onMount(() => {
 		window.addEventListener('resize', update);
 		window.addEventListener('scroll', update);
+		setTimeout(() => update(), 0);
 		update();
 	});
 

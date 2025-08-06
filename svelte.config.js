@@ -9,6 +9,11 @@ const config = {
 			assets: 'docs',
 			fallback: 'index.html'
 		})
+	},
+	compilerOptions: {
+		experimental: {
+			async: true
+		}
 	}
 };
 
