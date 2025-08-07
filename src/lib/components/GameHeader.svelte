@@ -37,7 +37,7 @@
 		<button onclick={handleIntroductionClick}>About</button>
 	</div>
 	<div class="trailing">
-		<button onclick={handleMuteClick}>
+		<button onclick={handleMuteClick} aria-label="Toggle Sound">
 			{#if gameState?.audioManager?.isMuted}
 				<SoundOff />
 			{:else}

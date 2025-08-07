@@ -37,7 +37,7 @@
 
 {#snippet append()}<ModalCreditsFooter />{/snippet}
 
-<Modal {open} {onClose} {append}>
+<Modal {open} {onClose} {append} title="About Subak Game">
 	<div class="content">
 		<header class="header">
 			<div class="game-logo">

@@ -9,9 +9,17 @@
 		prepend?: Snippet;
 		children: Snippet;
 		append?: Snippet;
+		title: string;
 	}
 
-	let { open = false, onClose = () => {}, prepend, children, append }: PropsInterface = $props();
+	let {
+		open = false,
+		onClose = () => {},
+		prepend,
+		children,
+		append,
+		title
+	}: PropsInterface = $props();
 
 	$effect(() => {
 		// Only add listener if the modal is open
@@ -43,7 +51,7 @@
 
 <!-- Render the modal structure only when `open` is true -->
 {#if open}
-	<div class="modal-wrapper" aria-modal="true" role="dialog">
+	<div class="modal-wrapper" aria-modal="true" role="dialog" {title}>
 		<div
 			class="custom-backdrop"
 			aria-hidden="true"

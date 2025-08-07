@@ -5,7 +5,7 @@
 </script>
 
 <main>
-	<a class="tk" href="https://kempf.dev#subak"><TKIcon /></a>
+	<a class="tk" href="https://kempf.dev#subak" aria-label="kempf.dev"><TKIcon /></a>
 	<Game />
 </main>
 
