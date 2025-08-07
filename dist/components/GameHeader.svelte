@@ -1,11 +1,16 @@
 <!-- App.svelte -->
-<script>
+<script lang="ts">
 	import SoundOn from '../icons/sound-on.svelte';
 	import SoundOff from '../icons/sound-off.svelte';
 	import IntroductionModal from './IntroductionModal.svelte';
 	import Fruit from './Fruit.svelte';
+	import type { GameState } from '../stores/game.svelte';
 
-	const { gameState } = $props();
+	interface GameHeaderProps {
+		gameState: GameState;
+	}
+
+	const { gameState }: GameHeaderProps = $props();
 
 	let showIntroduction = $state(true);
 
@@ -32,7 +37,7 @@
 		<button onclick={handleIntroductionClick}>About</button>
 	</div>
 	<div class="trailing">
-		<button onclick={handleMuteClick}>
+		<button onclick={handleMuteClick} aria-label="Toggle Sound">
 			{#if gameState?.audioManager?.isMuted}
 				<SoundOff />
 			{:else}

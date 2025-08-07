@@ -1,11 +1,7 @@
+import type { GameState } from '../stores/game.svelte';
+interface GameHeaderProps {
+    gameState: GameState;
+}
+declare const GameHeader: import("svelte").Component<GameHeaderProps, {}, "">;
+type GameHeader = ReturnType<typeof GameHeader>;
 export default GameHeader;
-type GameHeader = {
-    $on?(type: string, callback: (e: any) => void): () => void;
-    $set?(props: Partial<$$ComponentProps>): void;
-};
-declare const GameHeader: import("svelte").Component<{
-    gameState: any;
-}, {}, "">;
-type $$ComponentProps = {
-    gameState: any;
-};

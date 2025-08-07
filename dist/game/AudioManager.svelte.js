@@ -3,7 +3,7 @@ import { Howl, Howler } from 'howler';
 export class AudioManager {
     sounds = {};
     soundCooldowns = {}; // Tracks last play time
-    isMuted = $state(Howler?._muted);
+    isMuted = $state(Howler?.['_muted']);
     get isAudioContextReady() {
         return Howler.ctx?.state === 'running';
     }

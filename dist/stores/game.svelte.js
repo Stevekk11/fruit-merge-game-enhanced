@@ -20,7 +20,7 @@ function mapRange(value, inMin, inMax, outMin, outMax) {
     return ((clampedValue - inMin) * (outMax - outMin)) / (inMax - inMin) + outMin;
 }
 export class GameState {
-    audioManager = null;
+    audioManager = $state(null);
     score = $state(0);
     status = $state('uninitialized');
     currentFruitIndex = $state(0);
@@ -42,17 +42,17 @@ export class GameState {
     soundsPath = DEFAULT_SOUNDS_PATH;
     throttledCheckGameOver;
     constructor({ imagesPath, soundsPath }) {
-        (async () => {
-            if (imagesPath)
-                this.imagesPath = imagesPath;
-            if (soundsPath)
-                this.soundsPath = soundsPath;
-            this.audioManager = new AudioManager({ soundsPath });
-            this.throttledCheckGameOver = throttle(this.checkGameOver, 500);
-            await this.initPhysics();
-            this.resetGame(); // resetGame will now set status to 'uninitialized'
-            // this.update() is removed, game won't auto-start
-        })();
+        if (imagesPath)
+            this.imagesPath = imagesPath;
+        if (soundsPath)
+            this.soundsPath = soundsPath;
+        this.throttledCheckGameOver = throttle(this.checkGameOver, 500);
+        this.resetGame(); // resetGame will now set status to 'uninitialized'
+    }
+    async init() {
+        const { soundsPath } = this;
+        this.audioManager = new AudioManager({ soundsPath });
+        await this.initPhysics();
     }
     update() {
         // Ensure loop only runs if status is 'playing'

@@ -15,7 +15,7 @@
 	<ModalCreditsFooter />
 {/snippet}
 
-<Modal {open} {onClose} {append}>
+<Modal {open} {onClose} {append} title="Game Over">
 	<div class="content">
 		<h2 class="heading">Thanks for playing!</h2>
 

@@ -5,7 +5,7 @@
 <div class="footer">
 	<a class="credit" href="https://kempf.dev/#subak" target="_blank">
 		Crafted by <span class="tk-logo"><TKIcon /></span></a>
-	<span class="version">v2.0.0 <em>alpha</em></span>
+	<span class="version">v2.0.1 <em>alpha</em></span>
 </div>
 
 <style>

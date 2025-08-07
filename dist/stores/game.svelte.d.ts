@@ -44,6 +44,7 @@ export declare class GameState {
     soundsPath: string;
     throttledCheckGameOver?: () => void;
     constructor({ imagesPath, soundsPath }: GameStateProps);
+    init(): Promise<void>;
     update(): void;
     initPhysics(): Promise<void>;
     stepPhysics(): void;
