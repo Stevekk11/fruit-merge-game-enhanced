@@ -169,84 +169,78 @@
 -->
 <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 <div class="game-container">
-	<svelte:boundary>
+	<div
+		class="game responsive-font-size"
+		role="application"
+		aria-label="Fruit merging game area"
+		tabindex="0">
+		<div class="header"><GameHeader {gameState} /></div>
+		<div class="sidebar"><GameSidebar {gameState} /></div>
+
+		<!-- Game Container -->
 		<div
-			class="game responsive-font-size"
-			role="application"
-			aria-label="Fruit merging game area"
-			tabindex="0">
-			<div class="header"><GameHeader {gameState} /></div>
-			<div class="sidebar"><GameSidebar {gameState} /></div>
+			class="gameplay-area"
+			bind:this={gameRef}
+			onpointerup={handleClick}
+			onkeydown={handleKeyDown}
+			aria-hidden="true"
+			use:gameBoundingRect.action>
+			<!-- aria-hidden because the wrapper handles interaction -->
 
-			<!-- Game Container -->
-			<div
-				class="gameplay-area"
-				bind:this={gameRef}
-				onpointerup={handleClick}
-				onkeydown={handleKeyDown}
-				aria-hidden="true"
-				use:gameBoundingRect.action>
-				<!-- aria-hidden because the wrapper handles interaction -->
-
-				<div class="restricted-area"></div>
-
-				{#if gameState}
-					<div class="drop-line" style:translate="{clampedMouseX - 1}px 0"></div>
-
-					<!-- Merge effects - Use effect.id as the key -->
-					{#each gameState.mergeEffects as effect (effect.id)}
-						<GameEntity x={effect.x} y={effect.y} scale={gameScale}>
-							<MergeEffect {...effect} radius={effect.radius * gameScale} />
-						</GameEntity>
-					{/each}
-
-					<!-- Preview fruit - Appears when not dropping -->
-					{#if gameState.status !== 'gameover' && !isDropping && currentFruit}
-						<div
-							class="preview-fruit"
-							aria-hidden="true"
-							style:translate="{clampedMouseX}px 0"
-							in:scale={{ opacity: 1, easing: expoOut, duration: 250 }}>
-							<!-- aria-hidden as it's purely visual feedback -->
-							<GameEntity x={0} y={GAME_OVER_HEIGHT / 2} scale={gameScale}>
-								<Fruit {...currentFruit} radius={currentFruit.radius} scale={gameScale} />
-							</GameEntity>
-						</div>
-					{/if}
-
-					<!-- Rendered fruits - Use a unique identifier if available, otherwise index -->
-					<!-- Assuming FruitState doesn't have a stable ID, index might be necessary -->
-					<!-- If FruitState *does* get an ID (e.g., collider handle), use fruit.id -->
-					{#each gameState.fruitsState as fruitState (fruitState.id)}
-						{@const fruit = FRUITS[fruitState.fruitIndex]}
-						<GameEntity
-							x={fruitState.x}
-							y={fruitState.y}
-							rotation={fruitState.rotation}
-							scale={gameScale}>
-							<Fruit {...fruit} radius={fruit.radius * gameScale} />
-						</GameEntity>
-					{/each}
-				{/if}
-			</div>
+			<div class="restricted-area"></div>
 
 			{#if gameState}
-				<GameOverModal
-					open={gameState.status === 'gameover'}
-					score={gameState.score}
-					scores={highScores}
-					onClose={handleGameOverClose} />
+				<div class="drop-line" style:translate="{clampedMouseX - 1}px 0"></div>
+
+				<!-- Merge effects - Use effect.id as the key -->
+				{#each gameState.mergeEffects as effect (effect.id)}
+					<GameEntity x={effect.x} y={effect.y} scale={gameScale}>
+						<MergeEffect {...effect} radius={effect.radius * gameScale} />
+					</GameEntity>
+				{/each}
+
+				<!-- Preview fruit - Appears when not dropping -->
+				{#if gameState.status !== 'gameover' && !isDropping && currentFruit}
+					<div
+						class="preview-fruit"
+						aria-hidden="true"
+						style:translate="{clampedMouseX}px 0"
+						in:scale={{ opacity: 1, easing: expoOut, duration: 250 }}>
+						<!-- aria-hidden as it's purely visual feedback -->
+						<GameEntity x={0} y={GAME_OVER_HEIGHT / 2} scale={gameScale}>
+							<Fruit {...currentFruit} radius={currentFruit.radius} scale={gameScale} />
+						</GameEntity>
+					</div>
+				{/if}
+
+				<!-- Rendered fruits - Use a unique identifier if available, otherwise index -->
+				<!-- Assuming FruitState doesn't have a stable ID, index might be necessary -->
+				<!-- If FruitState *does* get an ID (e.g., collider handle), use fruit.id -->
+				{#each gameState.fruitsState as fruitState (fruitState.id)}
+					{@const fruit = FRUITS[fruitState.fruitIndex]}
+					<GameEntity
+						x={fruitState.x}
+						y={fruitState.y}
+						rotation={fruitState.rotation}
+						scale={gameScale}>
+						<Fruit {...fruit} radius={fruit.radius * gameScale} />
+					</GameEntity>
+				{/each}
 			{/if}
 		</div>
 
-		{#if showDebugMenu && gameState}
-			<DebugMenu {gameState} />
+		{#if gameState}
+			<GameOverModal
+				open={gameState.status === 'gameover'}
+				score={gameState.score}
+				scores={highScores}
+				onClose={handleGameOverClose} />
 		{/if}
+	</div>
 
-		{#snippet pending()}
-			<p>loading...</p>
-		{/snippet}
-	</svelte:boundary>
+	{#if showDebugMenu && gameState}
+		<DebugMenu {gameState} />
+	{/if}
 </div>
 
 <style>
@@ -301,6 +295,18 @@
 		--color-text: hsl(0, 0%, 20%);
 		--color-light-text: hsl(0, 0%, 35%);
 		--color-very-light-text: hsl(0, 0%, 50%);
+
+		--color-blueberry: hsl(233, 100%, 69.8%);
+		--color-grape: hsl(86.3, 48.6%, 49.6%);
+		--color-lemon: hsl(39.3, 100%, 59%);
+		--color-orange: hsl(20.7, 99.1%, 56.5%);
+		--color-apple: hsl(1.7, 100%, 42.7%);
+		--color-dragonfruit: hsl(343.7, 92.9%, 55.7%);
+		--color-pear: hsl(61.3, 60%, 65%);
+		--color-peach: hsl(17.2, 93.5%, 70%);
+		--color-pineapple: hsl(42, 100%, 60.2%);
+		--color-honeydew: hsl(86.2, 69.2%, 66.9%);
+		--color-watermelon: hsl(74, 74.1%, 45.5%);
 
 		--border-radius: 1em;
 
