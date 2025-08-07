@@ -42,9 +42,9 @@
 		<header class="header">
 			<div class="game-logo">
 				<div class="game-logo__fruits">
-					<Fruit name="orange" radius="1.5em" />
-					<Fruit name="watermelon" radius="4em" />
-					<Fruit name="apple" radius="2em" />
+					<Fruit name="orange" radius="2em" />
+					<Fruit name="watermelon" radius="6em" />
+					<Fruit name="apple" radius="3em" />
 				</div>
 				<h2 class="heading">Subak Game</h2>
 			</div>
@@ -83,7 +83,7 @@
 		align-items: center;
 		justify-content: center;
 		gap: 0.5em;
-		font-size: 2em;
+		font-size: 3em;
 		margin: 0;
 	}
 
