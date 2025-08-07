@@ -80,12 +80,10 @@
 
 	$effect(() => {
 		cursorPosition.ref = gameRef;
-		gameBoundingRect.ref = gameRef;
 	});
 
 	// Find fruit data
 	let currentFruit = $derived(FRUITS[gameState?.currentFruitIndex]);
-
 	let gameWidthPx = $derived(gameBoundingRect?.rect?.width || GAME_WIDTH_PX);
 	let gameScale = $derived(gameWidthPx / GAME_WIDTH_PX);
 
@@ -186,7 +184,8 @@
 				bind:this={gameRef}
 				onpointerup={handleClick}
 				onkeydown={handleKeyDown}
-				aria-hidden="true">
+				aria-hidden="true"
+				use:gameBoundingRect.action>
 				<!-- aria-hidden because the wrapper handles interaction -->
 
 				<div class="restricted-area"></div>

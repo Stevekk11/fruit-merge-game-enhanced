@@ -1,36 +1,65 @@
-import { onMount } from 'svelte';
+/**
+ * A Svelte 5 composable for tracking an element's bounding rectangle.
+ *
+ * It uses a ResizeObserver for high-performance size tracking and also updates
+ * on window scroll and resize events to keep viewport-relative properties
+ * (`top`, `left`, `x`, `y`) accurate.
+ *
+ * @returns An object with:
+ * - `rect`: A readonly, reactive `$state` variable holding the element's DOMRect.
+ * - `action`: A Svelte action to apply to the target element using `use:`.
+ *
+ * @example
+ * ```svelte
+ * <script>
+ * import { useBoundingRect } from './useBoundingRect';
+ *
+ * const { rect, action } = useBoundingRect();
+ * </script>
+ *
+ * <div use:action>
+ * {#if $rect}
+ * <p>Dimensions: {$rect.width}px x {$rect.height}px</p>
+ * {/if}
+ * </div>
+ * ```
+ */
 
 export function useBoundingRect() {
-	let ref: HTMLElement | null = $state(null);
-	let rect: DOMRect | null = $state(null);
+	let rect = $state<DOMRectReadOnly | undefined>(undefined);
 
-	const update = () => {
-		if (!ref) return;
-		rect = ref.getBoundingClientRect();
+	// Svelte action
+	const action = (node: HTMLElement) => {
+		// This function updates the reactive `rect` state.
+		const update = () => {
+			rect = node.getBoundingClientRect();
+		};
+
+		// Set the initial value as soon as the element is mounted.
+		update();
+
+		// Create a ResizeObserver to efficiently watch for changes to the element's size.
+		const resizeObserver = new ResizeObserver(update);
+		resizeObserver.observe(node);
+
+		// Also update on window scroll and resize to catch changes in the element's
+		// position relative to the viewport. `{ passive: true }` improves scroll performance.
+		window.addEventListener('scroll', update, { passive: true });
+		window.addEventListener('resize', update, { passive: true });
+
+		return {
+			destroy() {
+				resizeObserver.disconnect();
+				window.removeEventListener('scroll', update);
+				window.removeEventListener('resize', update);
+			}
+		};
 	};
 
-	onMount(() => {
-		window.addEventListener('resize', update);
-		window.addEventListener('scroll', update);
-		setTimeout(() => update(), 0);
-		update();
-	});
-
-	// so... when ref changes, fire
-	$effect(() => {
-		update();
-	});
-
 	return {
-		get ref() {
-			return ref;
-		},
 		get rect() {
 			return rect;
 		},
-		set ref(el) {
-			ref = el;
-		},
-		update
+		action
 	};
 }
