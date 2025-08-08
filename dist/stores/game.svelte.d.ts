@@ -1,4 +1,3 @@
-import { World, EventQueue } from '@dimforge/rapier2d-compat';
 import { Fruit } from '../game/Fruit';
 import { AudioManager } from '../game/AudioManager.svelte';
 import { Boundary } from '../game/Boundary';
@@ -23,6 +22,7 @@ interface GameStateProps {
 }
 export type GameStatus = 'uninitialized' | 'playing' | 'paused' | 'gameover';
 export declare class GameState {
+    __rapier: any;
     audioManager: AudioManager | null;
     score: number;
     status: GameStatus;
