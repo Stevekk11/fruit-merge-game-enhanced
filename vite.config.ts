@@ -3,5 +3,8 @@ import { defineConfig } from 'vite';
 import svg from '@poppanator/sveltekit-svg';
 
 export default defineConfig({
-	plugins: [sveltekit(), svg()]
+	plugins: [sveltekit(), svg()],
+	server: {
+		port: 4032 // PLU code of 수박
+	}
 });
