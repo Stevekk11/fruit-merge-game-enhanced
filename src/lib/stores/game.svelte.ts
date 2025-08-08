@@ -1,10 +1,3 @@
-import {
-	init as rapierInit,
-	Vector2,
-	World,
-	EventQueue // Import EventQueue
-} from '@dimforge/rapier2d-compat';
-
 import { Fruit } from '../game/Fruit';
 
 import {
@@ -63,6 +56,8 @@ interface GameStateProps {
 export type GameStatus = 'uninitialized' | 'playing' | 'paused' | 'gameover';
 
 export class GameState {
+	__rapier: any;
+
 	audioManager: AudioManager | null = $state(null);
 	score: number = $state(0);
 	status: GameStatus = $state('uninitialized');
@@ -96,14 +91,13 @@ export class GameState {
 		if (soundsPath) this.soundsPath = soundsPath;
 
 		this.throttledCheckGameOver = throttle(this.checkGameOver, 500);
-
-		this.resetGame(); // resetGame will now set status to 'uninitialized'
 	}
 
 	async init() {
 		const { soundsPath } = this;
 		this.audioManager = new AudioManager({ soundsPath });
 		await this.initPhysics();
+		this.resetGame(); // resetGame will now set status to 'uninitialized'
 	}
 
 	update() {
@@ -133,15 +127,17 @@ export class GameState {
 
 	async initPhysics(): Promise<void> {
 		console.log('Starting Rapier physics engine...');
+
 		try {
-			await rapierInit();
+			this.__rapier = await import('@dimforge/rapier2d-compat');
+			await this.__rapier.init();
 			console.log('Rapier physics initialized.');
 
 			// Why is this so far off of reality.
-			const gravity = new Vector2(0.0, 9.86 * 0.15);
-			this.physicsWorld = new World(gravity);
+			const gravity = new this.__rapier.Vector2(0.0, 9.86 * 0.15);
+			this.physicsWorld = new this.__rapier.World(gravity);
 			this.physicsWorld.integrationParameters.numSolverIterations = 8;
-			this.eventQueue = new EventQueue(true); // Create event queue (true enables contact events)
+			this.eventQueue = new this.__rapier.EventQueue(true); // Create event queue (true enables contact events)
 			this.colliderMap.clear(); // Ensure map is clear on init
 			this.createBounds();
 

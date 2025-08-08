@@ -35,7 +35,9 @@
 	class="fruit"
 	style:width
 	style:display={display === 'inline' ? 'inline-block' : display}>
-	{#if FruitComponent}<FruitComponent />{/if}
+	{#key name}
+		{#if FruitComponent}<FruitComponent style="display: block" {name} />{/if}
+	{/key}
 </div>
 
 <style>

@@ -223,7 +223,7 @@
 						y={fruitState.y}
 						rotation={fruitState.rotation}
 						scale={gameScale}>
-						<Fruit {...fruit} radius={fruit.radius * gameScale} />
+						<Fruit {...fruit} radius={fruit.radius} scale={gameScale} />
 					</GameEntity>
 				{/each}
 			{/if}
