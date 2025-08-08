@@ -1,7 +1,10 @@
 <script lang="ts">
+	import type { Component, SvelteComponent } from 'svelte';
 	import { GAME_WIDTH, GAME_WIDTH_PX } from '../constants';
-
-	import FruitImage from './FruitImage.svelte';
+	const fruitSvgs: Record<string, { default: Component<SvelteComponent> }> = import.meta.glob(
+		'$lib/svg/*.svg',
+		{ eager: true, query: '?component' }
+	);
 
 	interface FruitProps {
 		radius: number | string;
@@ -19,7 +22,12 @@
 			? `${(((radius as number) * 2) / GAME_WIDTH) * scaledGameWidthPx}px`
 			: radius;
 	});
-	const colorVar = $derived(`--color-${name.toLowerCase()}`);
+	const FruitComponent = $derived.by(() => {
+		const fruitKey = Object.keys(fruitSvgs).find((key) => key.includes(name.toLowerCase()));
+		// Handle the case where a fruit SVG might not be found to prevent runtime errors.
+		if (!fruitKey) return null;
+		return fruitSvgs[fruitKey]?.default;
+	});
 </script>
 
 <div
@@ -27,31 +35,12 @@
 	class="fruit"
 	style:width
 	style:display={display === 'inline' ? 'inline-block' : display}>
-	<svelte:boundary>
-		{#snippet pending()}
-			<div class="loading-fruit" style:color={`var(${colorVar})`}>
-				{name}
-			</div>
-		{/snippet}
-		<FruitImage {name} />
-	</svelte:boundary>
+	{#if FruitComponent}<FruitComponent />{/if}
 </div>
 
 <style>
 	.fruit {
 		aspect-ratio: 1 / 1;
 		user-select: none;
-	}
-
-	.loading-fruit {
-		aspect-ratio: 1 / 1;
-		border: currentColor 2px solid;
-		border-radius: 50%;
-		font-size: 12px;
-		font-weight: bold;
-		overflow: hidden;
-		display: flex;
-		align-items: center;
-		justify-content: center;
 	}
 </style>

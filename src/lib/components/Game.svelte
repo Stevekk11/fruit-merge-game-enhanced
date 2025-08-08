@@ -9,8 +9,8 @@
 
 	// Import Utilities
 	import { clamp } from '../utils';
-	import { useCursorPosition } from '../hooks/useCursorPosition.svelte.js';
-	import { useBoundingRect } from '../hooks/useBoundingRect.svelte.js';
+	import { useCursorPosition } from '../hooks/useCursorPosition.svelte';
+	import { useBoundingRect } from '../hooks/useBoundingRect.svelte';
 
 	// Import Components
 	import Fruit from './Fruit.svelte';
