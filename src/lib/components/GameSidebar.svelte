@@ -11,6 +11,8 @@
 	const { gameState } = $props();
 
 	let nextFruit = $derived(FRUITS[gameState?.nextFruitIndex] ?? null);
+
+	$inspect(gameState.dropCount);
 </script>
 
 <div class="game-sidebar">
@@ -19,14 +21,15 @@
 		<h5 class="section__heading">Next</h5>
 		<div class="next-fruit">
 			{#if nextFruit}
-				{#key gameState.dropCount}
+				<!-- This captures the value of nextFruit for the duration of the transition. -->
+				{#each [nextFruit] as fruit (gameState.dropCount)}
 					<div
 						class="next-fruit-wrapper"
 						in:fly={{ delay: 450, easing: quadOut, duration: 250, x: -50 }}
 						out:fly={{ delay: 250, easing: quadOut, duration: 250, x: 50 }}>
-						<Fruit radius="2.5em" name={nextFruit.name} />
+						<Fruit radius="2.5em" name={fruit.name} />
 					</div>
-				{/key}
+				{/each}
 			{/if}
 		</div>
 		<!-- Safety check for name -->

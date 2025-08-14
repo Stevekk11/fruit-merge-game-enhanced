@@ -1,10 +1,36 @@
 <script lang="ts">
-	import type { Component, SvelteComponent } from 'svelte';
 	import { GAME_WIDTH, GAME_WIDTH_PX } from '../constants';
-	const fruitSvgs: Record<string, { default: Component<SvelteComponent> }> = import.meta.glob(
-		'$lib/svg/*.svg',
-		{ eager: true, query: '?component' }
-	);
+
+	// Extract the SvgComponent type
+	import type BlueberrySvgComponent from '$lib/svg/blueberry.svg?component';
+	type SvgComponent = typeof BlueberrySvgComponent;
+
+	// Import all fruit manually
+	import Blueberry from '$lib/svg/blueberry.svg?component';
+	import Grape from '$lib/svg/grape.svg?component';
+	import Lemon from '$lib/svg/lemon.svg?component';
+	import Orange from '$lib/svg/orange.svg?component';
+	import Apple from '$lib/svg/apple.svg?component';
+	import Dragonfruit from '$lib/svg/dragonfruit.svg?component';
+	import Pear from '$lib/svg/pear.svg?component';
+	import Peach from '$lib/svg/peach.svg?component';
+	import Pineapple from '$lib/svg/pineapple.svg?component';
+	import Honeydew from '$lib/svg/honeydew.svg?component';
+	import Watermelon from '$lib/svg/watermelon.svg?component';
+
+	const fruitSvgs: Record<string, SvgComponent> = {
+		Blueberry,
+		Grape,
+		Lemon,
+		Orange,
+		Apple,
+		Dragonfruit,
+		Pear,
+		Peach,
+		Pineapple,
+		Honeydew,
+		Watermelon
+	};
 
 	interface FruitProps {
 		radius: number | string;
@@ -23,10 +49,10 @@
 			: radius;
 	});
 	const FruitComponent = $derived.by(() => {
-		const fruitKey = Object.keys(fruitSvgs).find((key) => key.includes(name.toLowerCase()));
+		const fruitKey = `${name.at(0).toUpperCase()}${name.slice(1)}`;
 		// Handle the case where a fruit SVG might not be found to prevent runtime errors.
 		if (!fruitKey) return null;
-		return fruitSvgs[fruitKey]?.default;
+		return fruitSvgs[fruitKey];
 	});
 </script>
 
@@ -35,9 +61,7 @@
 	class="fruit"
 	style:width
 	style:display={display === 'inline' ? 'inline-block' : display}>
-	{#key name}
-		{#if FruitComponent}<FruitComponent style="display: block" {name} />{/if}
-	{/key}
+	{#if FruitComponent}<FruitComponent style="display: block" {name} />{/if}
 </div>
 
 <style>
