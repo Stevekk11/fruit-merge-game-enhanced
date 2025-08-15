@@ -11,8 +11,6 @@
 	const { gameState } = $props();
 
 	let nextFruit = $derived(FRUITS[gameState?.nextFruitIndex] ?? null);
-
-	$inspect(gameState.dropCount);
 </script>
 
 <div class="game-sidebar">

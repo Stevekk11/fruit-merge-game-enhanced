@@ -28,9 +28,14 @@ export function useBoundingRect() {
     let rect = $state(undefined);
     // Svelte action
     const action = (node) => {
+        let autoUpdateTimeoutId;
         // This function updates the reactive `rect` state.
         const update = () => {
             rect = node.getBoundingClientRect();
+            // (Sanity) auto update just in case something we can't
+            // watch changes the dimensions
+            clearTimeout(autoUpdateTimeoutId);
+            autoUpdateTimeoutId = setTimeout(update, 1_000);
         };
         // Set the initial value as soon as the element is mounted.
         update();
