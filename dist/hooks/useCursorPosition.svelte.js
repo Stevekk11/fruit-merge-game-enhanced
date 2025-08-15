@@ -1,105 +1,60 @@
 /**
- * Tracks the mouse cursor's or primary touch point's position relative
- * to a target HTML element, optimizing by caching the element's
- * bounding rectangle.
+ * A Svelte 5 action that tracks the cursor's position relative to an element.
  *
- * @returns An object containing:
- *   - `ref`: A property to bind to the target element (`bind:this={hook.ref}`).
- *   - `x`: A reactive state variable for the relative horizontal coordinate.
- *   - `y`: A reactive state variable for the relative vertical coordinate.
- *     (Coordinates are 0 if the element isn't set or interaction hasn't occurred).
+ * This action composes `useBoundingRect` to efficiently track the element's
+ * position and size, updating the cursor's relative coordinates reactively.
+ *
+ * @returns An object with:
+ * - `x`: A readonly, reactive `$state` variable for the relative horizontal coordinate.
+ * - `y`: A readonly, reactive `$state` variable for the relative vertical coordinate.
+ * - `action`: A Svelte action to apply to the target element using `use:`.
+ *
+ * @example
+ * ```svelte
+ * <script>
+ * import { useCursorPosition } from './useCursorPosition';
+ *
+ * const { x, y, action } = useCursorPosition();
+ * </script>
+ *
+ * <div use:action>
+ * <p>Relative cursor position: {$x}, {$y}</p>
+ * </div>
+ * ```
  */
 export function useCursorPosition() {
-    let ref = $state(null);
+    // Internal reactive state for coordinates.
     let x = $state(0);
     let y = $state(0);
-    // Cache the element's bounding rectangle
-    let cachedRect = $state(null);
-    // Effect to manage all listeners and update cache
-    $effect(() => {
-        const element = ref; // Capture current value
-        if (!element) {
-            // Reset position and cache if element is removed or not yet set
-            x = 0;
-            y = 0;
-            cachedRect = null;
-            return; // No element, nothing to listen to
-        }
-        // --- Function to update the cached rectangle ---
-        const updateRect = () => {
-            cachedRect = element.getBoundingClientRect();
-            // console.log("Updated Rect Cache:", cachedRect); // For debugging
+    // 2. Define the main action that the user will apply to their element.
+    const action = (node, rect) => {
+        // Handler to update cursor position, now simplified.
+        // It relies on the `rect` signal from our composed hook.
+        const handlePointerMove = (event) => {
+            // The `rect` signal will be undefined until `boundingRectAction` runs.
+            if (!rect)
+                return;
+            // Calculate position relative to the element's top-left corner.
+            x = event.clientX - rect.left;
+            y = event.clientY - rect.top;
         };
-        // --- Initial cache update ---
-        updateRect();
-        // --- Shared Position Update Logic ---
-        const updatePosition = (clientX, clientY) => {
-            if (!cachedRect) {
-                // Should ideally not happen if element exists, but safety check
-                updateRect(); // Update if somehow null
-                if (!cachedRect)
-                    return; // Still null? Bail.
-            }
-            // Calculate position relative to the element's cached top-left corner
-            x = clientX - cachedRect.left;
-            y = clientY - cachedRect.top;
-        };
-        // --- Mouse Move Handler ---
-        const handleMouseMove = (event) => {
-            updatePosition(event.clientX, event.clientY);
-        };
-        // --- Touch Start Handler (updates position immediately on touch) ---
-        const handleTouchStart = (event) => {
-            if (event.touches.length > 0) {
-                const touch = event.touches[0];
-                updatePosition(touch.clientX, touch.clientY);
+        // Use modern Pointer Events for unified mouse, touch, and pen input.
+        node.addEventListener('pointermove', handlePointerMove);
+        // The action's destroy method ensures all listeners are cleaned up.
+        return {
+            destroy() {
+                node.removeEventListener('pointermove', handlePointerMove);
             }
         };
-        // --- Touch Move Handler ---
-        const handleTouchMove = (event) => {
-            // Prevent default scroll/zoom behavior while tracking inside the element
-            event.preventDefault();
-            if (event.touches.length > 0) {
-                const touch = event.touches[0];
-                updatePosition(touch.clientX, touch.clientY);
-            }
-        };
-        // --- Add Listeners ---
-        element.addEventListener('mousemove', handleMouseMove);
-        element.addEventListener('touchstart', handleTouchStart, {
-            passive: false
-        }); // Can be passive
-        element.addEventListener('touchmove', handleTouchMove, { passive: false }); // Must be active to preventDefault
-        // Listen to window scroll and resize to update the cached rect
-        // Use { passive: true } for scroll/resize for better performance
-        window.addEventListener('scroll', updateRect, { passive: true });
-        window.addEventListener('resize', updateRect, { passive: true });
-        setTimeout(() => updateRect(), 0);
-        // --- Cleanup Function ---
-        return () => {
-            // console.log("Cleaning up listeners for:", element); // For debugging
-            element.removeEventListener('mousemove', handleMouseMove);
-            element.removeEventListener('touchstart', handleTouchStart);
-            element.removeEventListener('touchmove', handleTouchMove);
-            window.removeEventListener('scroll', updateRect);
-            window.removeEventListener('resize', updateRect);
-            // Reset cache on cleanup as well
-            cachedRect = null;
-        };
-    }); // Dependencies: ref
-    // Return reactive getters and a setter for the ref
+    };
+    // Return the readonly state and the action.
     return {
-        get ref() {
-            return ref;
-        },
-        set ref(el) {
-            ref = el;
-        },
         get x() {
             return x;
         },
         get y() {
             return y;
-        }
+        },
+        action
     };
 }

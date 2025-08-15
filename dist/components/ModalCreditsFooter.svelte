@@ -1,11 +1,13 @@
 <script lang="ts">
 	import TKIcon from '../icons/tk.svelte';
+
+	const VERSION = import.meta.env.VITE_APP_VERSION;
 </script>
 
 <div class="footer">
 	<a class="credit" href="https://kempf.dev/#subak" target="_blank">
 		Crafted by <span class="tk-logo"><TKIcon /></span></a>
-	<span class="version">v2.0.2 <em>alpha</em></span>
+	<span class="version">v <var>{VERSION}</var></span>
 </div>
 
 <style>

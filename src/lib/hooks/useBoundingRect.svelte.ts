@@ -24,7 +24,6 @@
  * </div>
  * ```
  */
-
 export function useBoundingRect() {
 	let rect = $state<DOMRectReadOnly | undefined>(undefined);
 
