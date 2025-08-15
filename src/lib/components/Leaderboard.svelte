@@ -44,13 +44,13 @@
 	});
 </script>
 
-{#if scores && scores.length > 0}
-	<div class="leaderboard">
-		<div>
-			Top Scores from <strong>This Browser</strong>
-		</div>
-		<div class="scores">
-			<div class="scoresScroll" bind:this={tableContainer}>
+<div class="leaderboard">
+	<div>
+		Top Scores from <strong>This Browser</strong>
+	</div>
+	<div class="scores">
+		<div class="scoresScroll" bind:this={tableContainer}>
+			{#if scores && scores.length > 0}
 				<table>
 					<tbody>
 						{#each scores as score, index (score.id)}
@@ -65,10 +65,10 @@
 						{/each}
 					</tbody>
 				</table>
-			</div>
+			{/if}
 		</div>
 	</div>
-{/if}
+</div>
 
 <style>
 	.leaderboard {
@@ -85,7 +85,8 @@
 
 	.scoresScroll {
 		mask-image: linear-gradient(to top, rgba(0, 0, 0, 0) 0%, rgb(0, 0, 0) 1em);
-		max-height: 7.5em;
+		min-width: 10em;
+		height: 7.5em;
 		overflow-y: auto;
 		overflow-x: hidden;
 	}
@@ -97,6 +98,11 @@
 		font-style: normal;
 		font-variant-numeric: tabular-nums;
 		font-feature-settings: 'ss01';
+	}
+
+	.createdAt {
+		text-align: right;
+		font-size: 0.9em;
 	}
 
 	.score {
