@@ -1,7 +1,17 @@
 <script lang="ts">
+	import { browser } from '$app/environment';
+
 	import TKIcon from '../lib/icons/tk.svelte';
 
 	import Game from '../lib/components/Game.svelte';
+
+	if (browser) {
+		(async function () {
+			const { initializeWebAnalytics } = await import('../utils/web-analytics');
+
+			initializeWebAnalytics();
+		})();
+	}
 </script>
 
 <main>
