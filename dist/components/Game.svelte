@@ -198,14 +198,14 @@
 
 				<!-- Preview fruit - Appears when not dropping -->
 				{#if gameState.status !== 'gameover' && !isDropping && currentFruit}
-					<div
-						class="preview-fruit"
-						aria-hidden="true"
-						style:translate="{clampedMouseX}px 0"
-						in:scale={{ opacity: 1, easing: expoOut, duration: 250 }}>
-						<!-- aria-hidden as it's purely visual feedback -->
+					<!-- aria-hidden as it's purely visual feedback -->
+					<div class="preview-fruit" aria-hidden="true" style:translate="{clampedMouseX}px 0">
 						<GameEntity x={0} y={GAME_OVER_HEIGHT / 2} scale={gameScale}>
-							<Fruit {...currentFruit} radius={currentFruit.radius} scale={gameScale} />
+							<div
+								class="preview-fruit-wrapper"
+								in:scale={{ opacity: 1, easing: expoOut, duration: 250 }}>
+								<Fruit {...currentFruit} radius={currentFruit.radius} scale={gameScale} />
+							</div>
 						</GameEntity>
 					</div>
 				{/if}
