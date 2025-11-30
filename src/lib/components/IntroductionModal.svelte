@@ -60,7 +60,7 @@
 		</header>
 		<hr />
 		<section class="leaderboard">
-			<Leaderboard scores={highScores} />
+			{#if highScores.length}<Leaderboard scores={highScores} />{/if}
 		</section>
 		<button onclick={handleStartClick}>{startButtonText}</button>
 	</div>
