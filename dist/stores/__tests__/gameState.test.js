@@ -38,6 +38,7 @@ beforeEach(() => {
 describe('GameState merging', () => {
     it('merges two fruits of the same type', () => {
         const state = new GameState({});
+        state.physicsWorld = {}; // mock physicsWorld
         // add two fruits of type 0
         const a = state.addFruit(0, 0.2, 0.2);
         const b = state.addFruit(0, 0.25, 0.2);

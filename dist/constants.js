@@ -1,11 +1,9 @@
 export const GAME_WIDTH = 0.6; // meters
 export const GAME_HEIGHT = 0.9; // meters
 export const GAME_WIDTH_PX = 600;
-export const GAME_HEIGHT_PX = 900;
 export const WALL_THICKNESS = GAME_WIDTH / 20;
-export const MERGE_THRESHOLD = 100; // ms to detect if fruits are touching
 export const GAME_OVER_HEIGHT = GAME_HEIGHT / 6; // Y position above which game ends
-export const FRUIT_NAMES = [
+const FRUIT_NAMES = [
     'blueberry',
     'grape',
     'lemon',
@@ -23,7 +21,7 @@ export const FRUIT_NAMES = [
 // 	6.76, 8.86, 13.66, 14.41, 19.07, 25.23, 28.38, 35.29, 39.34, 48.57, 57.81
 // ];
 // Manual, based on suika
-export const FRUIT_SIZES = [
+const FRUIT_SIZES = [
     6.76, 8.86, 11.55, 14.41, 19.07, 23.54, 28.38, 34.93, 39.34, 48.57, 57.81
 ];
 export const FRUITS = [];
@@ -41,3 +39,4 @@ for (let i = 0; i < FRUIT_NAMES.length; i++) {
 }
 export const DEFAULT_IMAGES_PATH = '/images';
 export const DEFAULT_SOUNDS_PATH = '/sounds';
+export const APP_VERSION = '2.0.4';

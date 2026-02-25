@@ -33,7 +33,6 @@ class MockGameState {
 	setStatus = vi.fn((status: string) => {
 		this.status = status;
 	});
-	destroy = vi.fn();
 	constructor() {
 		instances.push(this);
 	}
@@ -42,9 +41,7 @@ class MockGameState {
 vi.mock('../../stores/game.svelte.js', () => ({ GameState: vi.fn() }));
 
 // Replace the mocked constructor with our implementation
-(gameStateModule as any).GameState.mockImplementation(
-	(...args: any[]) => new MockGameState(...args)
-);
+(gameStateModule as any).GameState.mockImplementation(() => new MockGameState());
 
 // Mock FRUITS constant
 const MOCK_FRUITS = [
@@ -58,8 +55,22 @@ vi.mock('../../constants', async () => {
 	// Define fruitsForMock for the mock's internal use to avoid ReferenceError
 	const fruitsForMock = [
 		{ id: 0, name: 'FruitA', radius: 0.1, points: 10, image: 'images/fruitA.webp', color: 'red' },
-		{ id: 1, name: 'FruitB', radius: 0.12, points: 20, image: 'images/fruitB.webp', color: 'yellow' },
-		{ id: 2, name: 'FruitC', radius: 0.15, points: 30, image: 'images/fruitC.webp', color: 'orange' }
+		{
+			id: 1,
+			name: 'FruitB',
+			radius: 0.12,
+			points: 20,
+			image: 'images/fruitB.webp',
+			color: 'yellow'
+		},
+		{
+			id: 2,
+			name: 'FruitC',
+			radius: 0.15,
+			points: 30,
+			image: 'images/fruitC.webp',
+			color: 'orange'
+		}
 	];
 	return {
 		...(actual as any),
@@ -141,7 +152,7 @@ describe('Game component', () => {
 	});
 
 	it('maintains correct fruit images after state changes (merges/removals)', async () => {
-		const { container, getAllByRole, debug } = render(Game);
+		const { container, getAllByRole } = render(Game);
 
 		// Start the game by clicking the start button in the modal
 		const startGameButton = getAllByRole('button', { name: /start game/i })[0];
@@ -156,12 +167,14 @@ describe('Game component', () => {
 		mockGameState.fruitsState = [
 			{ id: 1, x: 100, y: 100, rotation: 0, fruitIndex: 0 }, // FruitA
 			{ id: 2, x: 200, y: 100, rotation: 0, fruitIndex: 1 }, // FruitB
-			{ id: 3, x: 300, y: 100, rotation: 0, fruitIndex: 0 }  // FruitA
+			{ id: 3, x: 300, y: 100, rotation: 0, fruitIndex: 0 } // FruitA
 		];
 		mockGameState.setStatus('playing'); // Ensure game is in a state that renders fruits
 		await tick(); // Allow Svelte to render the fruits
 
-		let fruitImages = container.querySelectorAll('.fruit-entity img') as NodeListOf<HTMLImageElement>;
+		let fruitImages = container.querySelectorAll(
+			'.fruit-entity img'
+		) as NodeListOf<HTMLImageElement>;
 		expect(fruitImages.length).toBe(3);
 		// Note: getAttribute('src') might return the full URL. We check for endsWith.
 		expect(fruitImages[0].getAttribute('src')).toContain(MOCK_FRUITS[0].image); // FruitA

@@ -18,7 +18,7 @@ function mapRange(value, inMin, inMax, outMin, outMax) {
     return ((clampedValue - inMin) * (outMax - outMin)) / (inMax - inMin) + outMin;
 }
 export class GameState {
-    __rapier;
+    __rapier = undefined;
     audioManager = $state(null);
     score = $state(0);
     status = $state('uninitialized');
@@ -301,6 +301,7 @@ export class GameState {
         // update current state of fruits
         this.fruits = [...this.fruits, fruit];
         this.colliderMap.set(fruit.collider.handle, fruit);
+        return fruit;
     }
     dropFruit(fruitIndex, x, y) {
         this.addFruit(fruitIndex, x, y);

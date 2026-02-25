@@ -8,8 +8,8 @@
 	if (browser) {
 		(async function () {
 			const { initializeWebAnalytics } = await import('../utils/web-analytics');
-
-			initializeWebAnalytics();
+			const token = import.meta.env.VITE_POSTHOG_TOKEN as string;
+			initializeWebAnalytics(token);
 		})();
 	}
 </script>

@@ -46,11 +46,12 @@ beforeEach(() => {
 describe('GameState merging', () => {
 	it('merges two fruits of the same type', () => {
 		const state = new GameState({});
+		state.physicsWorld = {} as any; // mock physicsWorld
 		// add two fruits of type 0
 		const a = state.addFruit(0, 0.2, 0.2);
 		const b = state.addFruit(0, 0.25, 0.2);
 		const initialCount = state.fruits.length;
-		state.mergeFruits(a, b);
+		state.mergeFruits(a!, b!);
 		expect(state.fruits.length).toBe(initialCount - 1);
 		expect(state.fruits[0].fruitIndex).toBe(1);
 		expect(state.score).toBe(FRUITS[1].points);
