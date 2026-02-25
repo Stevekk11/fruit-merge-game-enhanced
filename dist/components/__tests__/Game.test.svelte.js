@@ -29,14 +29,13 @@ class MockGameState {
     setStatus = vi.fn((status) => {
         this.status = status;
     });
-    destroy = vi.fn();
     constructor() {
         instances.push(this);
     }
 }
 vi.mock('../../stores/game.svelte.js', () => ({ GameState: vi.fn() }));
 // Replace the mocked constructor with our implementation
-gameStateModule.GameState.mockImplementation((...args) => new MockGameState(...args));
+gameStateModule.GameState.mockImplementation(() => new MockGameState());
 // Mock FRUITS constant
 const MOCK_FRUITS = [
     { id: 0, name: 'FruitA', radius: 0.1, points: 10, image: 'images/fruitA.webp', color: 'red' },
@@ -48,8 +47,22 @@ vi.mock('../../constants', async () => {
     // Define fruitsForMock for the mock's internal use to avoid ReferenceError
     const fruitsForMock = [
         { id: 0, name: 'FruitA', radius: 0.1, points: 10, image: 'images/fruitA.webp', color: 'red' },
-        { id: 1, name: 'FruitB', radius: 0.12, points: 20, image: 'images/fruitB.webp', color: 'yellow' },
-        { id: 2, name: 'FruitC', radius: 0.15, points: 30, image: 'images/fruitC.webp', color: 'orange' }
+        {
+            id: 1,
+            name: 'FruitB',
+            radius: 0.12,
+            points: 20,
+            image: 'images/fruitB.webp',
+            color: 'yellow'
+        },
+        {
+            id: 2,
+            name: 'FruitC',
+            radius: 0.15,
+            points: 30,
+            image: 'images/fruitC.webp',
+            color: 'orange'
+        }
     ];
     return {
         ...actual,
@@ -114,7 +127,7 @@ describe('Game component', () => {
         expect(instances[0].restartGame).toHaveBeenCalled();
     });
     it('maintains correct fruit images after state changes (merges/removals)', async () => {
-        const { container, getAllByRole, debug } = render(Game);
+        const { container, getAllByRole } = render(Game);
         // Start the game by clicking the start button in the modal
         const startGameButton = getAllByRole('button', { name: /start game/i })[0];
         await fireEvent.click(startGameButton);

@@ -1,5 +1,5 @@
-import Dexie from 'dexie';
-export const db = new Dexie('FruitMergerDB');
+import Dexie, {} from 'dexie';
+const db = new Dexie('FruitMergerDB');
 db.version(1).stores({
     scores: '++id, score, date'
 });

@@ -1,6 +1,6 @@
-import Dexie from 'dexie';
+import Dexie, { type Table } from 'dexie';
 
-export const db = new Dexie('FruitMergerDB');
+const db = new Dexie('FruitMergerDB') as Dexie & { scores: Table<unknown, number> };
 
 db.version(1).stores({
 	scores: '++id, score, date'

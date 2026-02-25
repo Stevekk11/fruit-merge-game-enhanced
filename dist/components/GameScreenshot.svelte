@@ -5,7 +5,7 @@
 	let isLoading = $state(true); // Added state for loading indicator
 	let errorMessage = $state<string | null>(null); // Optional: for error handling
 
-	const generateScreenshot = getContext('generateScreenshot');
+	const generateScreenshot = getContext<() => Promise<string>>('generateScreenshot');
 
 	onMount(async () => {
 		try {

@@ -1,7 +1,8 @@
 import { Fruit } from '../game/Fruit';
 import { AudioManager } from '../game/AudioManager.svelte';
 import { Boundary } from '../game/Boundary';
-export interface MergeEffectData {
+import type { World, EventQueue } from '@dimforge/rapier2d-compat';
+interface MergeEffectData {
     id: number;
     x: number;
     y: number;
@@ -9,7 +10,7 @@ export interface MergeEffectData {
     startTime: number;
     duration: number;
 }
-export interface FruitState {
+interface FruitState {
     id: number;
     x: number;
     y: number;
@@ -20,9 +21,9 @@ interface GameStateProps {
     imagesPath?: string;
     soundsPath?: string;
 }
-export type GameStatus = 'uninitialized' | 'playing' | 'paused' | 'gameover';
+type GameStatus = 'uninitialized' | 'playing' | 'paused' | 'gameover';
 export declare class GameState {
-    __rapier: any;
+    __rapier: typeof import('@dimforge/rapier2d-compat') | undefined;
     audioManager: AudioManager | null;
     score: number;
     status: GameStatus;
@@ -52,7 +53,7 @@ export declare class GameState {
     createBounds(): void;
     createWall(x: number, y: number, width: number, height: number): void;
     mergeFruits(fruitA: Fruit, fruitB: Fruit): void;
-    addFruit(fruitIndex: number, x: number, y: number): void;
+    addFruit(fruitIndex: number, x: number, y: number): Fruit | undefined;
     dropFruit(fruitIndex: number, x: number, y: number): void;
     checkGameOver(): void;
     /** Resets the game state, physics world, and clears the map */

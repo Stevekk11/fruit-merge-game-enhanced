@@ -76,7 +76,4 @@
 		flex-direction: column;
 		gap: 1em;
 	}
-
-	.screenshot {
-	}
 </style>

@@ -34,8 +34,8 @@ export function useBoundingRect() {
             rect = node.getBoundingClientRect();
             // (Sanity) auto update just in case something we can't
             // watch changes the dimensions
-            clearTimeout(autoUpdateTimeoutId);
-            autoUpdateTimeoutId = setTimeout(update, 1_000);
+            window.clearTimeout(autoUpdateTimeoutId);
+            autoUpdateTimeoutId = window.setTimeout(update, 1_000);
         };
         // Set the initial value as soon as the element is mounted.
         update();

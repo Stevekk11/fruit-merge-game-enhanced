@@ -11,6 +11,7 @@ import {
 import { throttle } from '../utils/throttle';
 import { AudioManager } from '../game/AudioManager.svelte';
 import { Boundary } from '../game/Boundary';
+import type { World, EventQueue } from '@dimforge/rapier2d-compat';
 
 // --- Constants for Volume Mapping ---
 const MIN_VELOCITY_FOR_SOUND = 0.2; // Ignore very gentle taps
@@ -34,7 +35,7 @@ function mapRange(
 }
 
 // --- Interfaces remain the same ---
-export interface MergeEffectData {
+interface MergeEffectData {
 	id: number;
 	x: number;
 	y: number;
@@ -42,7 +43,7 @@ export interface MergeEffectData {
 	startTime: number;
 	duration: number;
 }
-export interface FruitState {
+interface FruitState {
 	id: number; // Add this line
 	x: number;
 	y: number;
@@ -53,10 +54,10 @@ interface GameStateProps {
 	imagesPath?: string;
 	soundsPath?: string;
 }
-export type GameStatus = 'uninitialized' | 'playing' | 'paused' | 'gameover';
+type GameStatus = 'uninitialized' | 'playing' | 'paused' | 'gameover';
 
 export class GameState {
-	__rapier: any;
+	__rapier: typeof import('@dimforge/rapier2d-compat') | undefined = undefined;
 
 	audioManager: AudioManager | null = $state(null);
 	score: number = $state(0);
@@ -391,7 +392,7 @@ export class GameState {
 		);
 	}
 
-	addFruit(fruitIndex: number, x: number, y: number): void {
+	addFruit(fruitIndex: number, x: number, y: number): Fruit | undefined {
 		if (!this.physicsWorld) {
 			console.error('Cannot add fruit: Physics world not initialized.');
 			return;
@@ -408,6 +409,7 @@ export class GameState {
 		this.fruits = [...this.fruits, fruit];
 
 		this.colliderMap.set(fruit.collider.handle, fruit);
+		return fruit;
 	}
 
 	dropFruit(fruitIndex: number, x: number, y: number): void {
