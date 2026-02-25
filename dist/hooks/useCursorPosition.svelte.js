@@ -27,21 +27,25 @@ export function useCursorPosition() {
     let x = $state(0);
     let y = $state(0);
     // 2. Define the main action that the user will apply to their element.
-    const action = (node, rect) => {
+    const action = (node, initialRect) => {
+        let currentRect = initialRect;
         // Handler to update cursor position, now simplified.
         // It relies on the `rect` signal from our composed hook.
         const handlePointerMove = (event) => {
             // The `rect` signal will be undefined until `boundingRectAction` runs.
-            if (!rect)
+            if (!currentRect)
                 return;
             // Calculate position relative to the element's top-left corner.
-            x = event.clientX - rect.left;
-            y = event.clientY - rect.top;
+            x = event.clientX - currentRect.left;
+            y = event.clientY - currentRect.top;
         };
         // Use modern Pointer Events for unified mouse, touch, and pen input.
         node.addEventListener('pointermove', handlePointerMove);
         // The action's destroy method ensures all listeners are cleaned up.
         return {
+            update(newRect) {
+                currentRect = newRect;
+            },
             destroy() {
                 node.removeEventListener('pointermove', handlePointerMove);
             }

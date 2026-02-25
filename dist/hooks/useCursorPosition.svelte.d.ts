@@ -25,7 +25,8 @@
 export declare function useCursorPosition(): {
     readonly x: number;
     readonly y: number;
-    action: (node: HTMLElement, rect: any) => {
+    action: (node: HTMLElement, initialRect?: DOMRectReadOnly) => {
+        update(newRect?: DOMRectReadOnly): void;
         destroy(): void;
     };
 };
