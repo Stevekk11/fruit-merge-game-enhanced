@@ -1,20 +1,10 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-
-	import { getHighScores } from '../stores/db';
-
 	import Modal from './Modal.svelte';
 	import Leaderboard from './Leaderboard.svelte';
 	import Fruit from './Fruit.svelte';
 	import ModalCreditsFooter from './ModalCreditsFooter.svelte';
 
 	const { open, gameStatus, onClose } = $props();
-
-	let highScores = $state([]);
-
-	onMount(async () => {
-		highScores = await getHighScores();
-	});
 
 	function handleStartClick() {
 		onClose();
@@ -60,7 +50,7 @@
 		</header>
 		<hr />
 		<section class="leaderboard">
-			{#if highScores.length}<Leaderboard scores={highScores} />{/if}
+			<Leaderboard />
 		</section>
 		<button onclick={handleStartClick}>{startButtonText}</button>
 	</div>

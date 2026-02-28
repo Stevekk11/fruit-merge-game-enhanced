@@ -228,6 +228,7 @@
 
 		{#if gameState}
 			<GameOverModal
+				{gameState}
 				open={gameState.status === 'gameover'}
 				score={gameState.score}
 				scores={highScores}

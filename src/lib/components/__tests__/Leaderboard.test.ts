@@ -1,4 +1,4 @@
-import { render } from '@testing-library/svelte';
+import { render, waitFor } from '@testing-library/svelte';
 import { describe, it, expect, vi } from 'vitest';
 import Leaderboard from '../Leaderboard.svelte';
 
@@ -9,7 +9,7 @@ const sampleScores = [
 
 describe('Leaderboard component', () => {
 	it('renders provided scores', () => {
-		const { container } = render(Leaderboard, { props: { scores: sampleScores } });
+		const { container } = render(Leaderboard, { props: { localScores: sampleScores } });
 		const rows = container.querySelectorAll('tbody tr');
 		expect(rows.length).toBe(sampleScores.length);
 		const firstRow = rows[0] as HTMLElement;
@@ -17,7 +17,7 @@ describe('Leaderboard component', () => {
 		expect(firstRow.querySelector('.score')?.textContent).toContain('1,200');
 	});
 
-	it('highlights and scrolls to a score', () => {
+	it('highlights and scrolls to a score', async () => {
 		const longScores = Array.from({ length: 15 }, (_, i) => ({
 			id: i + 1,
 			score: 1000 - i * 10,
@@ -31,11 +31,14 @@ describe('Leaderboard component', () => {
 			value: scrollSpy
 		});
 		const { container } = render(Leaderboard, {
-			props: { scores: longScores, highlightScore: highlight }
+			props: { localScores: longScores, highlightScore: highlight }
 		});
-		const row = container.querySelector(`tr[data-score="${highlight}"]`);
-		expect(row?.classList.contains('highlight')).toBe(true);
-		expect(scrollSpy).toHaveBeenCalled();
+
+		await waitFor(() => {
+			const row = container.querySelector(`tr[data-score="${highlight}"]`);
+			expect(row?.classList.contains('highlight')).toBe(true);
+			expect(scrollSpy).toHaveBeenCalled();
+		});
 		// clean up
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		delete (Element.prototype as any).scrollIntoView;

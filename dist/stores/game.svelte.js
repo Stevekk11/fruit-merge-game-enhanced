@@ -4,6 +4,7 @@ GAME_WIDTH, GAME_HEIGHT, WALL_THICKNESS, DEFAULT_IMAGES_PATH, DEFAULT_SOUNDS_PAT
 import { throttle } from '../utils/throttle';
 import { AudioManager } from '../game/AudioManager.svelte';
 import { Boundary } from '../game/Boundary';
+import { TelemetryState } from './telemetry.svelte';
 // --- Constants for Volume Mapping ---
 const MIN_VELOCITY_FOR_SOUND = 0.2; // Ignore very gentle taps
 const MAX_VELOCITY_FOR_MAX_VOL = 0.8; // Velocity at which sound is loudest
@@ -28,6 +29,8 @@ export class GameState {
     fruitsState = $state([]);
     dropCount = $state(0);
     mergeEffects = $state([]);
+    // Telemetry properties
+    telemetry = new TelemetryState();
     mergeEffectIdCounter = 0;
     physicsAccumulator = 0;
     lastTime = null;
@@ -284,8 +287,11 @@ export class GameState {
         this.setMergeEffects(newMergeEffects);
         // 4. Add the new, larger fruit (addFruit will update map and array)
         this.addFruit(nextIndex, midpoint.x, midpoint.y);
+        // Track Milestone
+        const points = nextFruitType.points || 0;
+        this.telemetry.trackMilestone(points, nextIndex, this.dropCount);
         // Update the score
-        this.setScore(this.score + (nextFruitType.points || 0));
+        this.setScore(this.score + points);
         console.log(`Merged handles ${fruitA.body.handle}, ${fruitB.body.handle}. New fruits count: ${this.fruits.length}`);
     }
     addFruit(fruitIndex, x, y) {
@@ -330,6 +336,7 @@ export class GameState {
         this.lastTime = null;
         this.mergeEffectIdCounter = 0;
         this.dropCount = 0;
+        this.telemetry.reset();
         // Reset Svelte stores
         this.setFruitsState([]);
         this.setMergeEffects([]);
@@ -340,6 +347,7 @@ export class GameState {
     }
     restartGame() {
         this.resetGame(); // This will set status to 'uninitialized'
+        this.telemetry.fetchSession(); // Ensure a fresh token is grabbed
         this.setStatus('playing'); // This will trigger the game loop via the modified setStatus
     }
     getRandomFruitIndex(limit = 5) {

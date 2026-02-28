@@ -115,9 +115,11 @@ export class Fruit {
 
 	// Method to handle cleanup when the fruit is removed
 	destroy(): void {
-		console.log(`Destroying physics body for ${this.name}`);
-		// Remove the associated rigid body from the physics world
-		this.physicsWorld.removeRigidBody(this.body);
+		if (this.body && this.collider) {
+			this.physicsWorld.removeCollider(this.collider, false);
+			// Remove the associated rigid body from the physics world
+			this.physicsWorld.removeRigidBody(this.body);
+		}
 
 		// The Fruit instance itself will be removed from the fruitsInPlay array separately.
 		// We don't nullify this.body here as the instance might be briefly

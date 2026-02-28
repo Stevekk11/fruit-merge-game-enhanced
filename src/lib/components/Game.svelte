@@ -5,7 +5,7 @@
 
 	// Import Stores and Types
 	import { GameState } from '../stores/game.svelte.js';
-	import { saveScore, getHighScores } from '../stores/db';
+	import { saveScore } from '../stores/db';
 
 	// Import Utilities
 	import { clamp } from '../utils';
@@ -40,7 +40,6 @@
 			soundsPath
 		})
 	);
-	let highScores = $state([]);
 	let showDebugMenu = $state(false);
 
 	// Find game area width and cursor position
@@ -99,7 +98,6 @@
 			if (gameState?.status === 'gameover') {
 				if (typeof gameState.score === 'number') {
 					await saveScore(gameState.score);
-					highScores = await getHighScores();
 				} else {
 					console.error('Attempted to save invalid score:', gameState.score);
 				}
@@ -228,9 +226,9 @@
 
 		{#if gameState}
 			<GameOverModal
+				{gameState}
 				open={gameState.status === 'gameover'}
 				score={gameState.score}
-				scores={highScores}
 				onClose={handleGameOverClose} />
 		{/if}
 	</div>

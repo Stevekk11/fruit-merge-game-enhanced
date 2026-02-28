@@ -74,7 +74,6 @@ export class AudioManager {
 				loop: config?.loop ?? false,
 				preload: config?.preload ?? true,
 				onload: () => {
-					console.log(`Sound "${name}" loaded successfully from ${path}`);
 					this.sounds[name] = sound;
 					// Initialize cooldown tracking for this sound
 					this.soundCooldowns[name] = 0;

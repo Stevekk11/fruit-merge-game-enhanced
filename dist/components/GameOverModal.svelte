@@ -4,7 +4,53 @@
 	import ModalCreditsFooter from './ModalCreditsFooter.svelte';
 	import GameScreenshot from './GameScreenshot.svelte';
 
-	const { open, score, scores = [], onClose } = $props();
+	const { open, score, scores = [], onClose, gameState } = $props();
+
+	let globalScores = $state([]);
+	let tab = $state<'local' | 'global'>('local');
+	let username = $state('');
+	let isSubmitting = $state(false);
+	let submissionStatus = $state<'idle' | 'success' | 'error'>('idle');
+
+	$effect(() => {
+		if (open && tab === 'global' && globalScores.length === 0) {
+			fetchGlobalScores();
+		}
+	});
+
+	async function fetchGlobalScores() {
+		try {
+			const res = await fetch('/api/leaderboard');
+			if (res.ok) {
+				const data = await res.json();
+				globalScores = data.scores.map((s) => ({
+					id: s.id,
+					score: s.score,
+					date: new Date(s.created_at)
+				}));
+			}
+		} catch (err) {
+			console.error('Failed to fetch global scores', err);
+		}
+	}
+
+	async function handleGlobalSubmit(e: Event) {
+		e.preventDefault();
+		if (!username.trim() || !gameState || isSubmitting) return;
+
+		isSubmitting = true;
+		const res = await gameState.telemetry.submitGlobalScore(username.trim(), gameState.score);
+		isSubmitting = false;
+
+		if (res.success) {
+			submissionStatus = 'success';
+			// refresh global scores and swap tab
+			await fetchGlobalScores();
+			tab = 'global';
+		} else {
+			submissionStatus = 'error';
+		}
+	}
 
 	function handleStartClick() {
 		onClose();
@@ -25,7 +71,34 @@
 					<div class="score-text">Your score was</div>
 					<var class="score-value">{Intl.NumberFormat().format(score)}</var>
 				</div>
-				<Leaderboard {scores} highlightScore={score} />
+
+				{#if gameState && submissionStatus !== 'success'}
+					<form class="global-submit" onsubmit={handleGlobalSubmit}>
+						<input
+							type="text"
+							bind:value={username}
+							placeholder="Enter name for global"
+							maxlength="20"
+							required
+							disabled={isSubmitting} />
+						<button type="submit" disabled={isSubmitting || !username.trim()}>
+							{isSubmitting ? 'Submitting...' : 'Submit Score'}
+						</button>
+						{#if submissionStatus === 'error'}
+							<span class="error-msg">Failed to submit!</span>
+						{/if}
+					</form>
+				{/if}
+
+				<div class="tabs">
+					<button class:active={tab === 'local'} onclick={() => (tab = 'local')}>Local Data</button>
+					<button class:active={tab === 'global'} onclick={() => (tab = 'global')}>Global</button>
+				</div>
+				{#if tab === 'local'}
+					<Leaderboard {scores} highlightScore={score} />
+				{:else}
+					<Leaderboard scores={globalScores} highlightScore={score} />
+				{/if}
 			</div>
 			<div class="screenshot"><GameScreenshot /></div>
 		</div>
@@ -75,5 +148,43 @@
 		display: flex;
 		flex-direction: column;
 		gap: 1em;
+	}
+
+	.global-submit {
+		display: flex;
+		flex-direction: column;
+		gap: 0.5em;
+		align-items: center;
+		padding: 1em;
+		background: var(--color-background-light, #f9f9f9);
+		border-radius: 8px;
+		border: 1px solid var(--color-border, #ccc);
+	}
+
+	.global-submit input {
+		padding: 0.5em;
+		border-radius: 4px;
+		border: 1px solid #ccc;
+		text-align: center;
+	}
+
+	.error-msg {
+		color: red;
+		font-size: 0.8em;
+	}
+
+	.tabs {
+		display: flex;
+		gap: 0.5em;
+		justify-content: center;
+	}
+	.tabs button {
+		background: none;
+		box-shadow: none;
+		opacity: 0.6;
+	}
+	.tabs button.active {
+		opacity: 1;
+		text-decoration: underline;
 	}
 </style>

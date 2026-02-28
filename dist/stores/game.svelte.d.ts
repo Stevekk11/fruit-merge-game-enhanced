@@ -2,6 +2,7 @@ import { Fruit } from '../game/Fruit';
 import { AudioManager } from '../game/AudioManager.svelte';
 import { Boundary } from '../game/Boundary';
 import type { World, EventQueue } from '@dimforge/rapier2d-compat';
+import { TelemetryState } from './telemetry.svelte';
 interface MergeEffectData {
     id: number;
     x: number;
@@ -33,6 +34,7 @@ export declare class GameState {
     fruitsState: FruitState[];
     dropCount: number;
     mergeEffects: MergeEffectData[];
+    telemetry: TelemetryState;
     mergeEffectIdCounter: number;
     physicsAccumulator: number;
     lastTime: number | null;

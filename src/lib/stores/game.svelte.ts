@@ -12,6 +12,7 @@ import { throttle } from '../utils/throttle';
 import { AudioManager } from '../game/AudioManager.svelte';
 import { Boundary } from '../game/Boundary';
 import type { World, EventQueue } from '@dimforge/rapier2d-compat';
+import { TelemetryState } from './telemetry.svelte';
 
 // --- Constants for Volume Mapping ---
 const MIN_VELOCITY_FOR_SOUND = 0.2; // Ignore very gentle taps
@@ -69,6 +70,9 @@ export class GameState {
 	dropCount: number = $state(0);
 	mergeEffects: MergeEffectData[] = $state([]);
 
+	// Telemetry properties
+	telemetry: TelemetryState = new TelemetryState();
+
 	mergeEffectIdCounter: number = 0;
 
 	physicsAccumulator: number = 0;
@@ -99,6 +103,7 @@ export class GameState {
 		this.audioManager = new AudioManager({ soundsPath });
 		await this.initPhysics();
 		this.resetGame(); // resetGame will now set status to 'uninitialized'
+		this.telemetry.fetchSession(); // Ensures a session starts on game load
 	}
 
 	update() {
@@ -127,12 +132,9 @@ export class GameState {
 	}
 
 	async initPhysics(): Promise<void> {
-		console.log('Starting Rapier physics engine...');
-
 		try {
 			this.__rapier = await import('@dimforge/rapier2d-compat');
 			await this.__rapier.init();
-			console.log('Rapier physics initialized.');
 
 			// Why is this so far off of reality.
 			const gravity = new this.__rapier.Vector2(0.0, 9.86 * 0.15);
@@ -141,8 +143,6 @@ export class GameState {
 			this.eventQueue = new this.__rapier.EventQueue(true); // Create event queue (true enables contact events)
 			this.colliderMap.clear(); // Ensure map is clear on init
 			this.createBounds();
-
-			console.log('Physics world and event queue created and set.');
 		} catch (error) {
 			console.error('Failed to initialize Rapier or create physics world:', error);
 			this.setStatus('gameover');
@@ -280,10 +280,6 @@ export class GameState {
 
 			// Check if fruits are the same type
 			if (fruitA.fruitIndex === fruitB.fruitIndex) {
-				// Queue this pair for merging
-				console.log(
-					`Collision Event: Queueing merge for type ${fruitA.fruitIndex} (handles ${handle1}, ${handle2})`
-				);
 				// Ensure consistent order (optional, but good practice)
 				const handleA = Math.min(handle1, handle2);
 				const handleB = Math.max(handle1, handle2);
@@ -297,12 +293,10 @@ export class GameState {
 
 		// --- Step 2: Process Queued Merges ---
 		if (mergePairs.length > 0) {
-			console.log(`Processing ${mergePairs.length} merge pairs from events...`);
 			mergePairs.forEach(({ fruitA, fruitB }) => {
 				// mergeFruits will handle validity checks internally now
 				this.mergeFruits(fruitA, fruitB);
 			});
-			console.log(`Finished processing merges. Current fruits count: ${this.fruits.length}`);
 		}
 	}
 
@@ -384,12 +378,12 @@ export class GameState {
 		// 4. Add the new, larger fruit (addFruit will update map and array)
 		this.addFruit(nextIndex, midpoint.x, midpoint.y);
 
-		// Update the score
-		this.setScore(this.score + (nextFruitType.points || 0));
+		// Track Milestone
+		const points = nextFruitType.points || 0;
+		this.telemetry.trackMilestone(points, nextIndex, this.dropCount);
 
-		console.log(
-			`Merged handles ${fruitA.body.handle}, ${fruitB.body.handle}. New fruits count: ${this.fruits.length}`
-		);
+		// Update the score
+		this.setScore(this.score + points);
 	}
 
 	addFruit(fruitIndex: number, x: number, y: number): Fruit | undefined {
@@ -424,7 +418,6 @@ export class GameState {
 
 		for (const fruit of this.fruits) {
 			if (fruit.isOutOfBounds()) {
-				console.log('Game Over condition met!');
 				this.setStatus('gameover');
 				break;
 			}
@@ -442,6 +435,7 @@ export class GameState {
 		this.lastTime = null;
 		this.mergeEffectIdCounter = 0;
 		this.dropCount = 0;
+		this.telemetry.reset();
 
 		// Reset Svelte stores
 		this.setFruitsState([]);
@@ -454,6 +448,7 @@ export class GameState {
 
 	restartGame(): void {
 		this.resetGame(); // This will set status to 'uninitialized'
+		this.telemetry.fetchSession(); // Ensure a fresh token is grabbed
 		this.setStatus('playing'); // This will trigger the game loop via the modified setStatus
 	}
 

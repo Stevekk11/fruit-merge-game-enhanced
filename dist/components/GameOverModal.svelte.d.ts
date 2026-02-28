@@ -3,6 +3,7 @@ declare const GameOverModal: import("svelte").Component<{
     score: any;
     scores?: any[];
     onClose: any;
+    gameState: any;
 }, {}, "">;
 type GameOverModal = ReturnType<typeof GameOverModal>;
 export default GameOverModal;
