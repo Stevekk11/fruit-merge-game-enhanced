@@ -1,5 +1,6 @@
 import type { GameMilestone } from '../types/leaderboard';
 import { env } from '$env/dynamic/public';
+import { APP_VERSION, BUILD_HASH } from '../buildInfo';
 
 export class TelemetryState {
 	sessionToken: string | null = $state(null);
@@ -53,7 +54,9 @@ export class TelemetryState {
 				finalScore,
 				sessionToken: this.sessionToken,
 				milestones: this.milestones,
-				validationHash
+				validationHash,
+				clientVersion: APP_VERSION,
+				buildHash: BUILD_HASH
 			};
 
 			const res = await fetch('http://localhost:4033/api/leaderboard/submit', {
