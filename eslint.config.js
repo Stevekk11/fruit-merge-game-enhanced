@@ -13,7 +13,16 @@ export default tsEslint.config(
 	// Apply Prettier's formatting rules
 	prettierEslint,
 	{
-		ignores: ['dist/**', 'dist/', 'dist/**/*', 'docs/**', '.svelte-kit/**']
+		ignores: [
+			'dist/**',
+			'dist/',
+			'dist/**/*',
+			'docs/**',
+			'.svelte-kit/**',
+			'build/**',
+			'build/',
+			'coverage/**'
+		]
 	},
 	{
 		languageOptions: {
