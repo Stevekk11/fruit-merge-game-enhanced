@@ -5,8 +5,8 @@ import { tick } from 'svelte';
 
 describe('useBoundingRect', () => {
 	let originalResizeObserver: typeof ResizeObserver;
-	let observeMock = vi.fn();
-	let disconnectMock = vi.fn();
+	const observeMock = vi.fn();
+	const disconnectMock = vi.fn();
 
 	beforeEach(() => {
 		originalResizeObserver = globalThis.ResizeObserver;

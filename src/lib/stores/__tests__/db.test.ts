@@ -7,7 +7,6 @@ vi.unmock('./src/lib/stores/db');
 describe('db.ts', () => {
 	let saveScore: any;
 	let getHighScores: any;
-	let dbObj: any;
 
 	beforeEach(async () => {
 		vi.resetModules();
