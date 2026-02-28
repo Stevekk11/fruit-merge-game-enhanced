@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { GameState } from '../game.svelte.js';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { FRUITS } from '../../constants';
+import { GameState } from '../game.svelte.js';
 
 // Stub physics related methods before constructing GameState
 const proto: any = GameState.prototype;

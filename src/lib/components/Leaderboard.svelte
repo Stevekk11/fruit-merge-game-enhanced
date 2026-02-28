@@ -1,99 +1,99 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import { getHighScores } from '../stores/db';
+import { onMount } from 'svelte';
+import { getHighScores } from '../stores/db';
 
-	// Define props using Svelte 5 $props rune
-	interface Score {
-		id: number;
-		score: number;
-		date: Date;
+// Define props using Svelte 5 $props rune
+interface Score {
+	id: number;
+	score: number;
+	date: Date;
+}
+
+interface LeaderboardProps {
+	localScores?: Score[];
+	highlightScore?: number;
+	activeTab?: 'local' | 'global';
+}
+let {
+	localScores = [],
+	highlightScore,
+	activeTab = $bindable('local')
+}: LeaderboardProps = $props();
+
+let globalScores = $state<Score[]>([]);
+let internalLocalScores = $state<Score[]>(localScores);
+
+export const fetchLocalScores = async () => {
+	try {
+		internalLocalScores = (await getHighScores()) as Score[];
+	} catch (err) {
+		console.error('Failed to fetch local scores', err);
+	}
+};
+
+export const fetchGlobalScores = async () => {
+	try {
+		const res = await fetch('http://localhost:4033/api/leaderboard');
+		if (res.ok) {
+			const data = await res.json();
+			globalScores = data.scores.map((s: { id: number; score: number; created_at: string }) => ({
+				id: s.id,
+				score: s.score,
+				date: new Date(s.created_at)
+			}));
+		}
+	} catch (err) {
+		console.error('Failed to fetch global scores', err);
+	}
+};
+
+$effect(() => {
+	if (activeTab === 'global' && globalScores.length === 0) {
+		fetchGlobalScores();
+	}
+});
+
+onMount(() => {
+	if (internalLocalScores.length === 0) {
+		fetchLocalScores();
+	}
+});
+
+let currentScores = $derived(activeTab === 'local' ? internalLocalScores : globalScores);
+
+let tableContainer: HTMLDivElement | null = $state(null);
+
+$effect(() => {
+	// By reading 'currentScores' here, we make it a reactive dependency of the effect.
+	// This ensures the effect re-runs if the scores data itself changes,
+	// which is important because the row we're looking for depends on this data.
+	const scoresData = currentScores;
+
+	if (
+		highlightScore == null || // No score to highlight
+		!tableContainer || // The scroll container isn't in the DOM yet
+		!scoresData || // Scores data isn't available
+		scoresData.length === 0 // Scores data is empty
+	) {
+		return;
 	}
 
-	interface LeaderboardProps {
-		localScores?: Score[];
-		highlightScore?: number;
-		activeTab?: 'local' | 'global';
-	}
-	let {
-		localScores = [],
-		highlightScore,
-		activeTab = $bindable('local')
-	}: LeaderboardProps = $props();
-
-	let globalScores = $state<Score[]>([]);
-	let internalLocalScores = $state<Score[]>(localScores);
-
-	export const fetchLocalScores = async () => {
-		try {
-			internalLocalScores = (await getHighScores()) as Score[];
-		} catch (err) {
-			console.error('Failed to fetch local scores', err);
-		}
-	};
-
-	export const fetchGlobalScores = async () => {
-		try {
-			const res = await fetch('http://localhost:4033/api/leaderboard');
-			if (res.ok) {
-				const data = await res.json();
-				globalScores = data.scores.map((s: { id: number; score: number; created_at: string }) => ({
-					id: s.id,
-					score: s.score,
-					date: new Date(s.created_at)
-				}));
-			}
-		} catch (err) {
-			console.error('Failed to fetch global scores', err);
-		}
-	};
-
-	$effect(() => {
-		if (activeTab === 'global' && globalScores.length === 0) {
-			fetchGlobalScores();
-		}
+	// Using requestAnimationFrame to ensure DOM is updated after activeTab changes
+	requestAnimationFrame(() => {
+		if (!tableContainer) return;
+		const row = tableContainer.querySelector(
+			`tr[data-score="${highlightScore}"]`
+		) as HTMLElement | null;
+		row?.scrollIntoView({ behavior: 'smooth', block: 'center' });
 	});
+});
 
-	onMount(() => {
-		if (internalLocalScores.length === 0) {
-			fetchLocalScores();
-		}
-	});
-
-	let currentScores = $derived(activeTab === 'local' ? internalLocalScores : globalScores);
-
-	let tableContainer: HTMLDivElement | null = $state(null);
-
-	$effect(() => {
-		// By reading 'currentScores' here, we make it a reactive dependency of the effect.
-		// This ensures the effect re-runs if the scores data itself changes,
-		// which is important because the row we're looking for depends on this data.
-		const scoresData = currentScores;
-
-		if (
-			highlightScore == null || // No score to highlight
-			!tableContainer || // The scroll container isn't in the DOM yet
-			!scoresData || // Scores data isn't available
-			scoresData.length === 0 // Scores data is empty
-		) {
-			return;
-		}
-
-		// Using requestAnimationFrame to ensure DOM is updated after activeTab changes
-		requestAnimationFrame(() => {
-			if (!tableContainer) return;
-			const row = tableContainer.querySelector(
-				`tr[data-score="${highlightScore}"]`
-			) as HTMLElement | null;
-			row?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-		});
-	});
-
-	// Date formatter remains the same
-	const formatter = new Intl.DateTimeFormat('en-US', {
-		year: '2-digit',
-		month: '2-digit',
-		day: '2-digit'
-	});
+// Date formatter remains the same
+const formatter = new Intl.DateTimeFormat('en-US', {
+	year: '2-digit',
+	month: '2-digit',
+	day: '2-digit'
+});
 </script>
 
 <div class="leaderboard">

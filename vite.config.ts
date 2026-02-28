@@ -1,7 +1,7 @@
+import { execSync } from 'node:child_process';
+import svg from '@poppanator/sveltekit-svg';
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vite';
-import svg from '@poppanator/sveltekit-svg';
-import { execSync } from 'child_process';
 import pkg from './package.json';
 
 const buildHash = (() => {

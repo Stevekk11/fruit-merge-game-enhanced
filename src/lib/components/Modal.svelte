@@ -1,52 +1,52 @@
 <script lang="ts">
-	import type { Snippet } from 'svelte';
-	import { quadOut } from 'svelte/easing';
-	import { fade, scale } from 'svelte/transition';
+import type { Snippet } from 'svelte';
+import { quadOut } from 'svelte/easing';
+import { fade, scale } from 'svelte/transition';
 
-	interface PropsInterface {
-		open: boolean;
-		onClose: () => void;
-		prepend?: Snippet;
-		children: Snippet;
-		append?: Snippet;
-		title: string;
-	}
+interface PropsInterface {
+	open: boolean;
+	onClose: () => void;
+	prepend?: Snippet;
+	children: Snippet;
+	append?: Snippet;
+	title: string;
+}
 
-	let {
-		open = false,
-		onClose = () => {},
-		prepend,
-		children,
-		append,
-		title
-	}: PropsInterface = $props();
+let {
+	open = false,
+	onClose = () => {},
+	prepend,
+	children,
+	append,
+	title
+}: PropsInterface = $props();
 
-	$effect(() => {
-		// Only add listener if the modal is open
-		if (!open) return;
+$effect(() => {
+	// Only add listener if the modal is open
+	if (!open) return;
 
-		const handleKeydown = (event: KeyboardEvent) => {
-			if (event.key === 'Escape') {
-				requestClose();
-			}
-		};
+	const handleKeydown = (event: KeyboardEvent) => {
+		if (event.key === 'Escape') {
+			requestClose();
+		}
+	};
 
-		// Add listener when modal opens
-		window.addEventListener('keydown', handleKeydown);
+	// Add listener when modal opens
+	window.addEventListener('keydown', handleKeydown);
 
-		// Cleanup listener when the modal closes or component unmounts
-		return () => {
-			window.removeEventListener('keydown', handleKeydown);
-		};
-	});
+	// Cleanup listener when the modal closes or component unmounts
+	return () => {
+		window.removeEventListener('keydown', handleKeydown);
+	};
+});
 
-	// --- Functions ---
-	// Function to request closing the modal (used by button and backdrop)
-	function requestClose() {
-		// Call the provided callback; the parent component is responsible
-		// for actually changing the `open` prop to false.
-		onClose();
-	}
+// --- Functions ---
+// Function to request closing the modal (used by button and backdrop)
+function requestClose() {
+	// Call the provided callback; the parent component is responsible
+	// for actually changing the `open` prop to false.
+	onClose();
+}
 </script>
 
 <!-- Render the modal structure only when `open` is true -->

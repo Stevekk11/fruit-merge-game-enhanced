@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TelemetryState } from '../telemetry.svelte.js';
 
 // Mock $env/dynamic/public and buildInfo so the module can be imported without SvelteKit

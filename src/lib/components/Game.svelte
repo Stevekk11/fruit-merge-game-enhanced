@@ -1,157 +1,157 @@
 <script lang="ts">
-	import { onMount, setContext } from 'svelte';
-	import { scale } from 'svelte/transition';
-	import { expoOut } from 'svelte/easing';
+import { onMount, setContext } from 'svelte';
+import { scale } from 'svelte/transition';
+import { expoOut } from 'svelte/easing';
 
-	// Import Stores and Types
-	import { GameState } from '../stores/game.svelte.js';
-	import { saveScore } from '../stores/db';
+// Import Stores and Types
+import { GameState } from '../stores/game.svelte.js';
+import { saveScore } from '../stores/db';
 
-	// Import Utilities
-	import { clamp } from '../utils';
-	import { useCursorPosition } from '../hooks/useCursorPosition.svelte';
-	import { useBoundingRect } from '../hooks/useBoundingRect.svelte';
+// Import Utilities
+import { clamp } from '../utils';
+import { useCursorPosition } from '../hooks/useCursorPosition.svelte';
+import { useBoundingRect } from '../hooks/useBoundingRect.svelte';
 
-	// Import Components
-	import Fruit from './Fruit.svelte';
-	import MergeEffect from './MergeEffect.svelte';
-	import GameEntity from './GameEntity.svelte';
-	import GameSidebar from './GameSidebar.svelte';
-	import GameHeader from './GameHeader.svelte';
-	import GameOverModal from './GameOverModal.svelte';
-	import DebugMenu from '../components/DebugMenu.svelte';
+// Import Components
+import Fruit from './Fruit.svelte';
+import MergeEffect from './MergeEffect.svelte';
+import GameEntity from './GameEntity.svelte';
+import GameSidebar from './GameSidebar.svelte';
+import GameHeader from './GameHeader.svelte';
+import GameOverModal from './GameOverModal.svelte';
+import DebugMenu from '../components/DebugMenu.svelte';
 
-	// Import Constants and Types
-	import {
-		GAME_WIDTH,
-		GAME_WIDTH_PX,
-		GAME_OVER_HEIGHT,
-		FRUITS,
-		DEFAULT_IMAGES_PATH,
-		DEFAULT_SOUNDS_PATH
-	} from '../constants';
+// Import Constants and Types
+import {
+	GAME_WIDTH,
+	GAME_WIDTH_PX,
+	GAME_OVER_HEIGHT,
+	FRUITS,
+	DEFAULT_IMAGES_PATH,
+	DEFAULT_SOUNDS_PATH
+} from '../constants';
 
-	const { imagesPath = DEFAULT_IMAGES_PATH, soundsPath = DEFAULT_SOUNDS_PATH } = $props();
+const { imagesPath = DEFAULT_IMAGES_PATH, soundsPath = DEFAULT_SOUNDS_PATH } = $props();
 
-	// Game state reference
-	let gameState = $state<GameState | null>(
-		new GameState({
-			imagesPath,
-			soundsPath
-		})
-	);
-	let showDebugMenu = $state(false);
+// Game state reference
+let gameState = $state<GameState | null>(
+	new GameState({
+		imagesPath,
+		soundsPath
+	})
+);
+let showDebugMenu = $state(false);
 
-	// Find game area width and cursor position
-	let gameRef = $state<HTMLElement | null>(null);
-	let gameBoundingRect = useBoundingRect();
-	let cursorPosition = useCursorPosition();
+// Find game area width and cursor position
+let gameRef = $state<HTMLElement | null>(null);
+let gameBoundingRect = useBoundingRect();
+let cursorPosition = useCursorPosition();
 
-	async function generateScreenshot() {
-		if (!gameRef) {
-			throw new Error('Could not find the gameplay area to screenshot.');
-		}
-
-		try {
-			const { domToPng } = await import('modern-screenshot');
-			const screenshotDataUrl = await domToPng(gameRef as HTMLElement, { font: false });
-
-			return screenshotDataUrl;
-		} catch (error) {
-			throw new Error('Failed to generate screenshot:', error);
-		}
+async function generateScreenshot() {
+	if (!gameRef) {
+		throw new Error('Could not find the gameplay area to screenshot.');
 	}
 
-	onMount(() => {
-		const urlParams = new URLSearchParams(window.location.search);
-		const isDebugQuery = urlParams.get('debug') === 'true';
-		const isLocalhost =
-			window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-		showDebugMenu = isDebugQuery && isLocalhost;
+	try {
+		const { domToPng } = await import('modern-screenshot');
+		const screenshotDataUrl = await domToPng(gameRef as HTMLElement, { font: false });
 
-		// Only initialize physics and audio on client
-		gameState.init();
+		return screenshotDataUrl;
+	} catch (error) {
+		throw new Error('Failed to generate screenshot:', error);
+	}
+}
 
-		return function onUnmount() {
-			gameState.destroy();
-		};
-	});
+onMount(() => {
+	const urlParams = new URLSearchParams(window.location.search);
+	const isDebugQuery = urlParams.get('debug') === 'true';
+	const isLocalhost =
+		window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+	showDebugMenu = isDebugQuery && isLocalhost;
 
-	// Find fruit data
-	let currentFruit = $derived(FRUITS[gameState?.currentFruitIndex]);
-	let gameWidthPx = $derived(gameBoundingRect?.rect?.width || GAME_WIDTH_PX);
-	let gameScale = $derived(gameWidthPx / GAME_WIDTH_PX);
+	// Only initialize physics and audio on client
+	gameState.init();
 
-	let clampedMouseX: number = $derived.by(() => {
-		const currentFruitRadius = currentFruit?.radius ?? 0.1; // Safety check
-		const radiusRatio = currentFruitRadius / GAME_WIDTH;
-		const radiusPx = radiusRatio * gameWidthPx;
-		// Update mouseX state, clamped within bounds
-		return clamp(cursorPosition.x, radiusPx, gameWidthPx - radiusPx);
-	});
+	return function onUnmount() {
+		gameState.destroy();
+	};
+});
 
-	let isDropping = $state(false);
+// Find fruit data
+let currentFruit = $derived(FRUITS[gameState?.currentFruitIndex]);
+let gameWidthPx = $derived(gameBoundingRect?.rect?.width || GAME_WIDTH_PX);
+let gameScale = $derived(gameWidthPx / GAME_WIDTH_PX);
 
-	// Save score and load leaderboard when game is over
-	$effect(() => {
-		(async () => {
-			if (gameState?.status === 'gameover') {
-				if (typeof gameState.score === 'number') {
-					await saveScore(gameState.score);
-				} else {
-					console.error('Attempted to save invalid score:', gameState.score);
-				}
+let clampedMouseX: number = $derived.by(() => {
+	const currentFruitRadius = currentFruit?.radius ?? 0.1; // Safety check
+	const radiusRatio = currentFruitRadius / GAME_WIDTH;
+	const radiusPx = radiusRatio * gameWidthPx;
+	// Update mouseX state, clamped within bounds
+	return clamp(cursorPosition.x, radiusPx, gameWidthPx - radiusPx);
+});
+
+let isDropping = $state(false);
+
+// Save score and load leaderboard when game is over
+$effect(() => {
+	(async () => {
+		if (gameState?.status === 'gameover') {
+			if (typeof gameState.score === 'number') {
+				await saveScore(gameState.score);
+			} else {
+				console.error('Attempted to save invalid score:', gameState.score);
 			}
-		})();
-	});
-
-	function dropCurrentFruit() {
-		if (!gameState || gameState.status !== 'playing' || isDropping) return;
-
-		isDropping = true;
-
-		gameState.dropFruit(
-			gameState.currentFruitIndex,
-			(clampedMouseX / gameWidthPx) * GAME_WIDTH,
-			GAME_OVER_HEIGHT / 2
-		);
-
-		// Prevent dropping too quickly
-		setTimeout(() => {
-			isDropping = false;
-		}, 500); // Cooldown duration
-	}
-
-	// --- Event Handlers ---
-
-	// Handle clicking/tapping to drop a fruit
-	function handleClick(event: PointerEvent): void {
-		// Only react to primary pointer button (typically left click).
-		// If the button property is undefined (e.g. in some test
-		// environments), treat it as a primary button click. This keeps
-		// browser navigation buttons functional.
-		if (event.button !== undefined && event.button !== 0) return;
-
-		dropCurrentFruit();
-	}
-
-	// Handle keyboard interaction for dropping fruit (Accessibility)
-	function handleKeyDown(event: KeyboardEvent): void {
-		if (event.key === 'Enter' || event.key === ' ') {
-			dropCurrentFruit();
-
-			event.preventDefault(); // Prevent default spacebar scroll
 		}
-	}
+	})();
+});
 
-	function handleGameOverClose() {
-		gameState?.restartGame();
-	}
+function dropCurrentFruit() {
+	if (!gameState || gameState.status !== 'playing' || isDropping) return;
 
-	// Set context for child components to consume
-	setContext('imagesPath', imagesPath);
-	setContext('soundsPath', soundsPath);
-	setContext('generateScreenshot', generateScreenshot);
+	isDropping = true;
+
+	gameState.dropFruit(
+		gameState.currentFruitIndex,
+		(clampedMouseX / gameWidthPx) * GAME_WIDTH,
+		GAME_OVER_HEIGHT / 2
+	);
+
+	// Prevent dropping too quickly
+	setTimeout(() => {
+		isDropping = false;
+	}, 500); // Cooldown duration
+}
+
+// --- Event Handlers ---
+
+// Handle clicking/tapping to drop a fruit
+function handleClick(event: PointerEvent): void {
+	// Only react to primary pointer button (typically left click).
+	// If the button property is undefined (e.g. in some test
+	// environments), treat it as a primary button click. This keeps
+	// browser navigation buttons functional.
+	if (event.button !== undefined && event.button !== 0) return;
+
+	dropCurrentFruit();
+}
+
+// Handle keyboard interaction for dropping fruit (Accessibility)
+function handleKeyDown(event: KeyboardEvent): void {
+	if (event.key === 'Enter' || event.key === ' ') {
+		dropCurrentFruit();
+
+		event.preventDefault(); // Prevent default spacebar scroll
+	}
+}
+
+function handleGameOverClose() {
+	gameState?.restartGame();
+}
+
+// Set context for child components to consume
+setContext('imagesPath', imagesPath);
+setContext('soundsPath', soundsPath);
+setContext('generateScreenshot', generateScreenshot);
 </script>
 
 <!--

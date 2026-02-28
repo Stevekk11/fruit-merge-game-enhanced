@@ -1,16 +1,16 @@
 <script lang="ts">
-	import { quadOut } from 'svelte/easing';
-	import { fly } from 'svelte/transition';
+import { quadOut } from 'svelte/easing';
+import { fly } from 'svelte/transition';
 
-	import Fruit from './Fruit.svelte';
-	import CircleOfEvolution from './CircleOfEvolution.svelte';
+import Fruit from './Fruit.svelte';
+import CircleOfEvolution from './CircleOfEvolution.svelte';
 
-	import { FRUITS } from '../constants';
-	import InterpolatingNumber from './InterpolatingNumber.svelte';
+import { FRUITS } from '../constants';
+import InterpolatingNumber from './InterpolatingNumber.svelte';
 
-	const { gameState } = $props();
+const { gameState } = $props();
 
-	let nextFruit = $derived(FRUITS[gameState?.nextFruitIndex] ?? null);
+let nextFruit = $derived(FRUITS[gameState?.nextFruitIndex] ?? null);
 </script>
 
 <div class="game-sidebar">

@@ -1,28 +1,28 @@
 <script lang="ts">
-	import type { GameState } from '../stores/game.svelte'; // Adjust if GameState type is not directly exportable or path is different
-	import { FRUITS, GAME_WIDTH, GAME_OVER_HEIGHT } from '../constants';
+import type { GameState } from '../stores/game.svelte'; // Adjust if GameState type is not directly exportable or path is different
+import { FRUITS, GAME_WIDTH, GAME_OVER_HEIGHT } from '../constants';
 
-	const { gameState } = $props<{ gameState: GameState }>();
+const { gameState } = $props<{ gameState: GameState }>();
 
-	let isCollapsed = $state(false);
-	let selectedFruitIndex = $state(0);
-	let selectedXPosition = $state(GAME_WIDTH / 2);
+let isCollapsed = $state(false);
+let selectedFruitIndex = $state(0);
+let selectedXPosition = $state(GAME_WIDTH / 2);
 
-	function toggleCollapse() {
-		isCollapsed = !isCollapsed;
+function toggleCollapse() {
+	isCollapsed = !isCollapsed;
+}
+
+function handleDropFruit() {
+	if (gameState) {
+		gameState.dropFruit(selectedFruitIndex, selectedXPosition, GAME_OVER_HEIGHT / 2);
 	}
+}
 
-	function handleDropFruit() {
-		if (gameState) {
-			gameState.dropFruit(selectedFruitIndex, selectedXPosition, GAME_OVER_HEIGHT / 2);
-		}
+function handleEndGame() {
+	if (gameState) {
+		gameState.setStatus('gameover');
 	}
-
-	function handleEndGame() {
-		if (gameState) {
-			gameState.setStatus('gameover');
-		}
-	}
+}
 </script>
 
 <div class="debug-menu">

@@ -1,6 +1,6 @@
-import type { GameMilestone } from '../types/leaderboard';
 import { env } from '$env/dynamic/public';
 import { APP_VERSION, BUILD_HASH } from '../buildInfo';
+import type { GameMilestone } from '../types/leaderboard';
 
 export class TelemetryState {
 	sessionToken: string | null = $state(null);

@@ -1,32 +1,32 @@
 <!-- App.svelte -->
 <script lang="ts">
-	import SoundOn from '../icons/sound-on.svelte';
-	import SoundOff from '../icons/sound-off.svelte';
-	import IntroductionModal from './IntroductionModal.svelte';
-	import Fruit from './Fruit.svelte';
-	import type { GameState } from '$lib/stores/game.svelte';
+import SoundOn from '../icons/sound-on.svelte';
+import SoundOff from '../icons/sound-off.svelte';
+import IntroductionModal from './IntroductionModal.svelte';
+import Fruit from './Fruit.svelte';
+import type { GameState } from '$lib/stores/game.svelte';
 
-	interface GameHeaderProps {
-		gameState: GameState;
-	}
+interface GameHeaderProps {
+	gameState: GameState;
+}
 
-	const { gameState }: GameHeaderProps = $props();
+const { gameState }: GameHeaderProps = $props();
 
-	let showIntroduction = $state(true);
+let showIntroduction = $state(true);
 
-	function handleIntroductionClick() {
-		showIntroduction = true;
-		gameState.setStatus('paused');
-	}
+function handleIntroductionClick() {
+	showIntroduction = true;
+	gameState.setStatus('paused');
+}
 
-	function handleCloseIntroduction() {
-		showIntroduction = false;
-		gameState.setStatus('playing');
-	}
+function handleCloseIntroduction() {
+	showIntroduction = false;
+	gameState.setStatus('playing');
+}
 
-	function handleMuteClick() {
-		gameState?.audioManager?.toggleMute();
-	}
+function handleMuteClick() {
+	gameState?.audioManager?.toggleMute();
+}
 </script>
 
 <header class="header">

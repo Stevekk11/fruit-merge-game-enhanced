@@ -1,13 +1,10 @@
 <script lang="ts">
-	import { FRUITS } from '../constants';
+import { FRUITS } from '../constants';
 
-	import Fruit from './Fruit.svelte';
+import Fruit from './Fruit.svelte';
 
-	const fruitsMidpoint = Math.ceil(FRUITS.length / 2);
-	const fruitGroups = [
-		FRUITS.slice(0, fruitsMidpoint),
-		FRUITS.slice(fruitsMidpoint, FRUITS.length)
-	];
+const fruitsMidpoint = Math.ceil(FRUITS.length / 2);
+const fruitGroups = [FRUITS.slice(0, fruitsMidpoint), FRUITS.slice(fruitsMidpoint, FRUITS.length)];
 </script>
 
 <div class="fruits">

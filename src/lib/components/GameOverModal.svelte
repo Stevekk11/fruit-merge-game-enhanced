@@ -1,47 +1,47 @@
 <script lang="ts">
-	import Modal from './Modal.svelte';
-	import Leaderboard from './Leaderboard.svelte';
-	import ModalCreditsFooter from './ModalCreditsFooter.svelte';
-	import GameScreenshot from './GameScreenshot.svelte';
+import Modal from './Modal.svelte';
+import Leaderboard from './Leaderboard.svelte';
+import ModalCreditsFooter from './ModalCreditsFooter.svelte';
+import GameScreenshot from './GameScreenshot.svelte';
 
-	const { open, score, onClose, gameState } = $props();
+const { open, score, onClose, gameState } = $props();
 
-	let tab = $state<'local' | 'global'>('local');
-	let username = $state('');
-	let isSubmitting = $state(false);
-	let submissionStatus = $state<'idle' | 'success' | 'error'>('idle');
+let tab = $state<'local' | 'global'>('local');
+let username = $state('');
+let isSubmitting = $state(false);
+let submissionStatus = $state<'idle' | 'success' | 'error'>('idle');
 
-	let leaderboardRef: ReturnType<typeof Leaderboard> | null = $state(null);
+let leaderboardRef: ReturnType<typeof Leaderboard> | null = $state(null);
 
-	$effect(() => {
-		if (open && tab === 'local' && leaderboardRef) {
-			leaderboardRef.fetchLocalScores();
-		}
-	});
-
-	async function handleGlobalSubmit(e: Event) {
-		e.preventDefault();
-		if (!username.trim() || !gameState || isSubmitting) return;
-
-		isSubmitting = true;
-		const res = await gameState.telemetry.submitGlobalScore(username.trim(), gameState.score);
-		isSubmitting = false;
-
-		if (res.success) {
-			submissionStatus = 'success';
-			// refresh global scores and swap tab
-			if (leaderboardRef) {
-				await leaderboardRef.fetchGlobalScores();
-			}
-			tab = 'global';
-		} else {
-			submissionStatus = 'error';
-		}
+$effect(() => {
+	if (open && tab === 'local' && leaderboardRef) {
+		leaderboardRef.fetchLocalScores();
 	}
+});
 
-	function handleStartClick() {
-		onClose();
+async function handleGlobalSubmit(e: Event) {
+	e.preventDefault();
+	if (!username.trim() || !gameState || isSubmitting) return;
+
+	isSubmitting = true;
+	const res = await gameState.telemetry.submitGlobalScore(username.trim(), gameState.score);
+	isSubmitting = false;
+
+	if (res.success) {
+		submissionStatus = 'success';
+		// refresh global scores and swap tab
+		if (leaderboardRef) {
+			await leaderboardRef.fetchGlobalScores();
+		}
+		tab = 'global';
+	} else {
+		submissionStatus = 'error';
 	}
+}
+
+function handleStartClick() {
+	onClose();
+}
 </script>
 
 {#snippet append()}

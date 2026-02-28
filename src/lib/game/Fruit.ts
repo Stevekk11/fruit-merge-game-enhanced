@@ -1,12 +1,12 @@
 import {
 	ActiveEvents,
-	RigidBody,
-	RigidBodyDesc,
-	Collider,
+	type Collider,
 	ColliderDesc,
-	World,
+	type RigidBody,
+	RigidBodyDesc,
+	type Rotation,
 	type Vector,
-	type Rotation
+	type World
 } from '@dimforge/rapier2d-compat'; // Or @dimforge/rapier3d
 
 import { FRUITS, GAME_OVER_HEIGHT } from '../constants';

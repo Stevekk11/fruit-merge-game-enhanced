@@ -1,17 +1,17 @@
-import { Fruit } from '../game/Fruit';
+import type { EventQueue, World } from '@dimforge/rapier2d-compat';
 
 import {
-	FRUITS, // Assuming FRUITS is typed like: { radius: number; points: number }[]
-	GAME_WIDTH,
-	GAME_HEIGHT,
-	WALL_THICKNESS,
 	DEFAULT_IMAGES_PATH,
-	DEFAULT_SOUNDS_PATH
+	DEFAULT_SOUNDS_PATH,
+	FRUITS, // Assuming FRUITS is typed like: { radius: number; points: number }[]
+	GAME_HEIGHT,
+	GAME_WIDTH,
+	WALL_THICKNESS
 } from '../constants'; // Ensure constants are correctly typed in their file
-import { throttle } from '../utils/throttle';
 import { AudioManager } from '../game/AudioManager.svelte';
 import { Boundary } from '../game/Boundary';
-import type { World, EventQueue } from '@dimforge/rapier2d-compat';
+import { Fruit } from '../game/Fruit';
+import { throttle } from '../utils/throttle';
 import { TelemetryState } from './telemetry.svelte';
 
 // --- Constants for Volume Mapping ---
@@ -263,8 +263,8 @@ export class GameState {
 				return;
 			}
 
-			let fruitA;
-			let fruitB;
+			let fruitA: Fruit | undefined;
+			let fruitB: Fruit | undefined;
 			if (collisionItemA instanceof Fruit && collisionItemB instanceof Fruit) {
 				fruitA = collisionItemA;
 				fruitB = collisionItemB;
@@ -427,7 +427,9 @@ export class GameState {
 	/** Resets the game state, physics world, and clears the map */
 	resetGame(): void {
 		if (this.physicsWorld) {
-			this.fruits.forEach((fruit) => fruit.destroy());
+			this.fruits.forEach((fruit) => {
+				fruit.destroy();
+			});
 		}
 
 		// Clear internal state

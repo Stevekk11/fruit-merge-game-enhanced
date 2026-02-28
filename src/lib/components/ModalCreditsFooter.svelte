@@ -1,8 +1,8 @@
 <script lang="ts">
-	import TKIcon from '../icons/tk.svelte';
-	import { APP_VERSION } from '../constants';
+import TKIcon from '../icons/tk.svelte';
+import { APP_VERSION } from '../constants';
 
-	const VERSION = APP_VERSION;
+const VERSION = APP_VERSION;
 </script>
 
 <div class="footer">

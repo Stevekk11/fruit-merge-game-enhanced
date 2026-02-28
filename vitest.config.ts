@@ -1,7 +1,7 @@
+import { execSync } from 'node:child_process';
 import { svelte, vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 import { defineConfig, type Plugin } from 'vitest/config';
 import pkg from './package.json';
-import { execSync } from 'child_process';
 
 const buildHash = (() => {
 	try {
