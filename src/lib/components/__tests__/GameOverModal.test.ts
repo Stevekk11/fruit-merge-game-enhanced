@@ -129,4 +129,53 @@ describe('GameOverModal', () => {
 		});
 		expect(container.querySelector('.score-value')).toBeNull();
 	});
+
+	it('initializes username from localStorage if available', async () => {
+		// Set localStorage before render
+		window.localStorage.setItem('subak_initials', 'ABC');
+
+		const gameState = makeGameState();
+		const { container } = render(GameOverModal, {
+			props: { open: true, score: 1500, onClose: vi.fn(), gameState }
+		});
+
+		await waitFor(() => {
+			const input = container.querySelector('input') as HTMLInputElement;
+			expect(input.value).toBe('ABC');
+		});
+	});
+
+	it('saves username to localStorage on successful submit', async () => {
+		// Clear local storage first
+		window.localStorage.removeItem('subak_initials');
+
+		const submitScore = vi.fn().mockResolvedValue({ success: true });
+		const gameState = makeGameState({
+			leaderboard: {
+				submissionStatus: 'idle',
+				sessionToken: 'mock-token',
+				submitScore,
+				globalScores: [],
+				globalScoresStatus: 'idle',
+				fetchGlobalScores: vi.fn()
+			}
+		});
+
+		const { getAllByRole, container } = render(GameOverModal, {
+			props: { open: true, score: 1500, onClose: vi.fn(), gameState }
+		});
+
+		const input = container.querySelector('input') as HTMLInputElement;
+		await fireEvent.input(input, {
+			target: { value: 'XYZ' }
+		});
+
+		const submitBtn = getAllByRole('button', { name: /submit score/i })[0];
+		await fireEvent.click(submitBtn);
+
+		await waitFor(() => {
+			expect(submitScore).toHaveBeenCalled();
+			expect(window.localStorage.getItem('subak_initials')).toBe('XYZ');
+		});
+	});
 });

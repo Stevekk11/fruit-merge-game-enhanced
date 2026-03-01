@@ -1,67 +1,66 @@
 <script lang="ts">
-  import Modal from "./Modal.svelte";
-  import Leaderboard from "./Leaderboard.svelte";
-  import ModalCreditsFooter from "./ModalCreditsFooter.svelte";
-  import GameScreenshot from "./GameScreenshot.svelte";
-  import type { GameState } from "../stores/game.svelte";
+import Modal from './Modal.svelte';
+import Leaderboard from './Leaderboard.svelte';
+import ModalCreditsFooter from './ModalCreditsFooter.svelte';
+import GameScreenshot from './GameScreenshot.svelte';
+import type { GameState } from '../stores/game.svelte';
 
-  interface GameOverModalProps {
-    open: boolean;
-    score: number;
-    onClose: () => void;
-    gameState: GameState;
-  }
-  const { open, score, onClose, gameState }: GameOverModalProps = $props();
+interface GameOverModalProps {
+	open: boolean;
+	score: number;
+	onClose: () => void;
+	gameState: GameState;
+}
+const { open, score, onClose, gameState }: GameOverModalProps = $props();
 
-  let tab = $state<"local" | "global">("local");
-  let username = $state("");
+let tab = $state<'local' | 'global'>('local');
+let username = $state(
+	typeof window !== 'undefined' ? window.localStorage.getItem('subak_initials') || '' : ''
+);
 
-  $effect(() => {
-    if (username) {
-      username = username.toUpperCase();
-    }
-  });
+$effect(() => {
+	if (username) {
+		username = username.toUpperCase();
+	}
+});
 
-  let leaderboardRef: ReturnType<typeof Leaderboard> | null = $state(null);
+let leaderboardRef: ReturnType<typeof Leaderboard> | null = $state(null);
 
-  const isSubmitting = $derived(
-    gameState.leaderboard.submissionStatus === "submitting",
-  );
-  const submissionStatus = $derived(gameState.leaderboard.submissionStatus);
+const isSubmitting = $derived(gameState.leaderboard.submissionStatus === 'submitting');
+const submissionStatus = $derived(gameState.leaderboard.submissionStatus);
 
-  $effect(() => {
-    if (open && tab === "local" && leaderboardRef) {
-      leaderboardRef.fetchLocalScores();
-    }
-  });
+$effect(() => {
+	if (open && tab === 'local' && leaderboardRef) {
+		leaderboardRef.fetchLocalScores();
+	}
+});
 
-  async function handleGlobalSubmit(e: Event) {
-    e.preventDefault();
-    if (!username.trim() || username.length !== 3 || isSubmitting) return;
+async function handleGlobalSubmit(e: Event) {
+	e.preventDefault();
+	if (!username.trim() || username.length !== 3 || isSubmitting) return;
 
-    const token = gameState.leaderboard.sessionToken;
-    if (!token) {
-      console.error("Cannot submit: no session token");
-      return;
-    }
+	const token = gameState.leaderboard.sessionToken;
+	if (!token) {
+		console.error('Cannot submit: no session token');
+		return;
+	}
 
-    const payload = await gameState.telemetry.buildSubmissionPayload(
-      username.trim(),
-      score,
-      token,
-    );
-    if (!payload) return;
+	const payload = await gameState.telemetry.buildSubmissionPayload(username.trim(), score, token);
+	if (!payload) return;
 
-    const result = await gameState.leaderboard.submitScore(payload);
+	const result = await gameState.leaderboard.submitScore(payload);
 
-    if (result.success) {
-      tab = "global";
-    }
-  }
+	if (result.success) {
+		if (typeof window !== 'undefined') {
+			window.localStorage.setItem('subak_initials', username);
+		}
+		tab = 'global';
+	}
+}
 
-  function handleStartClick() {
-    onClose();
-  }
+function handleStartClick() {
+	onClose();
+}
 </script>
 
 {#snippet append()}
