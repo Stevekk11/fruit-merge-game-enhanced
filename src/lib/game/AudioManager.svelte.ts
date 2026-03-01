@@ -22,7 +22,7 @@ interface AudioManagerProps {
 export class AudioManager {
 	private sounds: Record<string, Howl> = {};
 	private soundCooldowns: Record<string, number> = {}; // Tracks last play time
-	isMuted: boolean = $state(Howler?.['_muted'] as boolean);
+	isMuted: boolean = $state((Howler as unknown as { _muted: boolean })?._muted ?? false);
 
 	get isAudioContextReady() {
 		return Howler.ctx?.state === 'running';
@@ -74,7 +74,6 @@ export class AudioManager {
 				loop: config?.loop ?? false,
 				preload: config?.preload ?? true,
 				onload: () => {
-					console.log(`Sound "${name}" loaded successfully from ${path}`);
 					this.sounds[name] = sound;
 					// Initialize cooldown tracking for this sound
 					this.soundCooldowns[name] = 0;
@@ -82,12 +81,12 @@ export class AudioManager {
 					if (specificCooldownMs !== undefined) {
 						// Use a convention, e.g., store cooldown on the Howl object
 						// (be mindful this isn't a standard Howler property)
-						// eslint-disable-next-line @typescript-eslint/no-explicit-any
-						(sound as any)._customCooldown = specificCooldownMs;
+						(sound as typeof sound & { _customCooldown?: number })._customCooldown =
+							specificCooldownMs;
 					}
 					resolve();
 				},
-				onloaderror: (id, error) => {
+				onloaderror: (_id, error) => {
 					console.error(`Failed to load sound "${name}" from ${path}:`, error);
 					reject(error);
 				}
@@ -124,8 +123,7 @@ export class AudioManager {
 
 		const now = performance.now();
 		const lastPlayTime = this.soundCooldowns[name] ?? 0;
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		const cooldown = (sound as any)._customCooldown;
+		const cooldown = (sound as typeof sound & { _customCooldown?: number })._customCooldown;
 
 		if (typeof cooldown === 'undefined' || now - lastPlayTime > cooldown) {
 			try {

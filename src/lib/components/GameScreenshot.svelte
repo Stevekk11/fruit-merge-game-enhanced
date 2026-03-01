@@ -1,22 +1,22 @@
 <script lang="ts">
-	import { onMount, getContext } from 'svelte';
+import { onMount, getContext } from 'svelte';
 
-	let screenshotDataUrl = $state<string | null>(null);
-	let isLoading = $state(true); // Added state for loading indicator
-	let errorMessage = $state<string | null>(null); // Optional: for error handling
+let screenshotDataUrl = $state<string | null>(null);
+let isLoading = $state(true); // Added state for loading indicator
+let errorMessage = $state<string | null>(null); // Optional: for error handling
 
-	const generateScreenshot = getContext<() => Promise<string>>('generateScreenshot');
+const generateScreenshot = getContext<() => Promise<string>>('generateScreenshot');
 
-	onMount(async () => {
-		try {
-			screenshotDataUrl = await generateScreenshot();
-		} catch (error) {
-			console.error('Failed to generate screenshot:', error);
-			errorMessage = 'Failed to generate screenshot.';
-		} finally {
-			isLoading = false;
-		}
-	});
+onMount(async () => {
+	try {
+		screenshotDataUrl = await generateScreenshot();
+	} catch (error) {
+		console.error('Failed to generate screenshot:', error);
+		errorMessage = 'Failed to generate screenshot.';
+	} finally {
+		isLoading = false;
+	}
+});
 </script>
 
 <div class="screenshot">

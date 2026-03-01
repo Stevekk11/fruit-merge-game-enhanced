@@ -1,144 +1,216 @@
 <script lang="ts">
-	// Define props using Svelte 5 $props rune
-	interface Score {
-		id: number;
-		score: number;
-		date: Date;
+import { onMount } from 'svelte';
+import { getHighScores } from '../stores/db';
+import type { LeaderboardClient, LeaderboardScore } from '../api/leaderboard-client.svelte';
+
+interface LeaderboardProps {
+	leaderboardClient?: LeaderboardClient;
+	localScores?: LeaderboardScore[];
+	highlightScore?: number;
+	activeTab?: 'local' | 'global';
+}
+let {
+	leaderboardClient,
+	localScores = [],
+	highlightScore,
+	activeTab = $bindable('local')
+}: LeaderboardProps = $props();
+
+let internalLocalScores = $state<LeaderboardScore[]>(localScores);
+
+export const fetchLocalScores = async () => {
+	try {
+		internalLocalScores = (await getHighScores()) as LeaderboardScore[];
+	} catch (err) {
+		console.error('Failed to fetch local scores', err);
+	}
+};
+
+export const fetchGlobalScores = async () => {
+	if (leaderboardClient) {
+		// Reset status to allow refetch (e.g. after score submission)
+		leaderboardClient.globalScoresStatus = 'idle';
+		await leaderboardClient.fetchGlobalScores();
+	}
+};
+
+$effect(() => {
+	if (activeTab === 'global' && leaderboardClient?.globalScoresStatus === 'idle') {
+		leaderboardClient.fetchGlobalScores();
+	}
+});
+
+onMount(() => {
+	if (internalLocalScores.length === 0) {
+		fetchLocalScores();
+	}
+});
+
+let currentScores = $derived(
+	activeTab === 'local' ? internalLocalScores : (leaderboardClient?.globalScores ?? [])
+);
+
+let tableContainer: HTMLDivElement | null = $state(null);
+
+$effect(() => {
+	// By reading 'currentScores' here, we make it a reactive dependency of the effect.
+	const scoresData = currentScores;
+
+	if (highlightScore == null || !tableContainer || !scoresData || scoresData.length === 0) {
+		return;
 	}
 
-	interface LeaderboardProps {
-		scores: Score[];
-		highlightScore?: number;
-	}
-	let { scores, highlightScore }: LeaderboardProps = $props();
-
-	let tableContainer: HTMLDivElement | null = $state(null);
-
-	$effect(() => {
-		// By reading 'scores' here, we make it a reactive dependency of the effect.
-		// This ensures the effect re-runs if the scores data itself changes,
-		// which is important because the row we're looking for depends on this data.
-		const currentScores = scores;
-
-		if (
-			highlightScore == null || // No score to highlight
-			!tableContainer || // The scroll container isn't in the DOM yet
-			!currentScores || // Scores data isn't available
-			currentScores.length === 0 // Scores data is empty
-		) {
-			// console.log('Effect: Conditions not met for scrolling. Exiting.');
-			return;
-		}
-
+	requestAnimationFrame(() => {
+		if (!tableContainer) return;
 		const row = tableContainer.querySelector(
 			`tr[data-score="${highlightScore}"]`
 		) as HTMLElement | null;
 		row?.scrollIntoView({ behavior: 'smooth', block: 'center' });
 	});
+});
 
-	// Date formatter remains the same
-	const formatter = new Intl.DateTimeFormat('en-US', {
-		year: '2-digit',
-		month: '2-digit',
-		day: '2-digit'
-	});
+const formatter = new Intl.DateTimeFormat('en-US', {
+	year: '2-digit',
+	month: '2-digit',
+	day: '2-digit'
+});
 </script>
 
 <div class="leaderboard">
-	<div>
-		Top Scores from <strong>This Browser</strong>
-	</div>
-	<div class="scores">
-		<div class="scoresScroll" bind:this={tableContainer}>
-			{#if scores && scores.length > 0}
-				<table>
-					<tbody>
-						{#each scores as score, index (score.id)}
-							{@const rank = index + 1}
-							<tr data-score={score.score} class:highlight={score.score === highlightScore}>
-								<td class="rank">{rank}</td>
-								<td class="score">
-									<strong>{Intl.NumberFormat().format(score.score)}</strong>
-								</td>
-								<td class="createdAt">{formatter.format(score.date)}</td>
-							</tr>
-						{/each}
-					</tbody>
-				</table>
-			{/if}
-		</div>
-	</div>
+  <div class="tabs">
+    <button
+      class:active={activeTab === "local"}
+      onclick={() => (activeTab = "local")}>Local Data</button
+    >
+    <button
+      class:active={activeTab === "global"}
+      onclick={() => (activeTab = "global")}>Global</button
+    >
+  </div>
+  <div class="scores" class:global={activeTab === "global"}>
+    <div class="scoresScroll" bind:this={tableContainer}>
+      {#if currentScores && currentScores.length > 0}
+        <table>
+          <tbody>
+            {#each currentScores as score, index (score.id)}
+              {@const rank = index + 1}
+              <tr
+                data-score={score.score}
+                class:highlight={score.score === highlightScore}
+              >
+                <td class="rank">{rank}</td>
+                {#if activeTab === "global" && score.username}
+                  <td class="username">{score.username}</td>
+                {/if}
+                <td class="score">
+                  <strong>{Intl.NumberFormat().format(score.score)}</strong>
+                </td>
+                <td class="createdAt">{formatter.format(score.date)}</td>
+              </tr>
+            {/each}
+          </tbody>
+        </table>
+      {:else}
+        <div class="empty">No scores yet.</div>
+      {/if}
+    </div>
+  </div>
 </div>
 
 <style>
-	.leaderboard {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: 0.5em;
-	}
+  .leaderboard {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5em;
+  }
 
-	.scores {
-		border: var(--color-border-light) 1px solid;
-		border-radius: 10px;
-	}
+  .tabs {
+    display: flex;
+    gap: 0.5em;
+    justify-content: center;
+  }
 
-	.scoresScroll {
-		mask-image: linear-gradient(to top, rgba(0, 0, 0, 0) 0%, rgb(0, 0, 0) 1em);
-		min-width: 10em;
-		height: 7.5em;
-		overflow-y: auto;
-		overflow-x: hidden;
-	}
+  .tabs button {
+    background: none;
+    box-shadow: none;
+    opacity: 0.6;
+    cursor: pointer;
+    border: none;
+    font-size: 1em;
+  }
 
-	/* Combined selectors - using createdAt based on JSX */
-	.rank,
-	.score,
-	.createdAt {
-		font-style: normal;
-		font-variant-numeric: tabular-nums;
-		font-feature-settings: 'ss01';
-	}
+  .tabs button.active {
+    opacity: 1;
+    text-decoration: underline;
+  }
 
-	.createdAt {
-		text-align: right;
-		font-size: 0.9em;
-	}
+  .empty {
+    padding: 2em;
+    text-align: center;
+    color: #666;
+  }
 
-	.score {
-		text-align: right;
-	}
+  .scores {
+    border: var(--color-border-light) 1px solid;
+    border-radius: 10px;
+    width: 100%;
+  }
 
-	/* .name class was in original CSS but not used in JSX, omitted here */
+  .scoresScroll {
+    mask-image: linear-gradient(to top, rgba(0, 0, 0, 0) 0%, rgb(0, 0, 0) 1em);
+    min-width: 10em;
+    height: 7.5em;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
 
-	table {
-		border-collapse: collapse;
-		width: 100%;
-	}
+  /* Combined selectors - using createdAt based on JSX */
+  .rank,
+  .score,
+  .createdAt {
+    font-style: normal;
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "ss01";
+  }
 
-	td {
-		border-bottom: var(--color_light-border) 1px dotted;
-		padding: 0.4em 0.5em;
-	}
+  .createdAt {
+    text-align: right;
+    font-size: 0.9em;
+  }
 
-	/* Flattened nested selectors */
-	td:first-child {
-		padding-left: 1em;
-	}
+  .score {
+    text-align: right;
+  }
 
-	td:last-child {
-		padding-right: 1em;
-	}
+  table {
+    border-collapse: collapse;
+    width: 100%;
+  }
 
-	tr:last-child td {
-		border-bottom: none;
-	}
+  td {
+    border-bottom: var(--color_light-border) 1px dotted;
+    padding: 0.4em 0.5em;
+  }
 
-	tr:nth-child(even) {
-		background: var(--color-background);
-	}
+  /* Flattened nested selectors */
+  td:first-child {
+    padding-left: 1em;
+  }
 
-	tr.highlight {
-		background-color: rgba(68, 253, 115, 0.11);
-	}
+  td:last-child {
+    padding-right: 1em;
+  }
+
+  tr:last-child td {
+    border-bottom: none;
+  }
+
+  tr:nth-child(even) {
+    background: var(--color-background);
+  }
+
+  tr.highlight {
+    background-color: rgba(68, 253, 115, 0.11);
+  }
 </style>

@@ -1,6 +1,6 @@
-import { describe, it, expect } from 'vitest';
-import { useCursorPosition } from '../useCursorPosition.svelte';
 import { tick } from 'svelte';
+import { describe, expect, it } from 'vitest';
+import { useCursorPosition } from '../useCursorPosition.svelte';
 
 if (typeof globalThis.PointerEvent === 'undefined') {
 	class MockPointerEvent extends Event {

@@ -1,5 +1,5 @@
-import posthog from 'posthog-js';
 import { BROWSER } from 'esm-env';
+import posthog from 'posthog-js';
 
 /** @public */
 export function initializeWebAnalytics(token: string) {

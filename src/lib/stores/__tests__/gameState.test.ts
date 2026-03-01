@@ -1,18 +1,29 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { GameState } from '../game.svelte.js';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { FRUITS } from '../../constants';
+import { GameState } from '../game.svelte.js';
 
 // Stub physics related methods before constructing GameState
 const proto: any = GameState.prototype;
 vi.spyOn(proto, 'initPhysics').mockImplementation(async function (this: any) {
 	this.physicsWorld = {
 		integrationParameters: { dt: 1 / 60 },
-		removeRigidBody: vi.fn()
+		removeRigidBody: vi.fn(),
+		step: vi.fn()
 	};
 	this.eventQueue = { drainCollisionEvents: vi.fn() };
 });
-vi.spyOn(proto, 'update').mockImplementation(() => {});
+vi.spyOn(proto, 'update').mockImplementation(function (this: any) {
+	if (this.status !== 'playing') {
+		if (this.animationFrameId) {
+			clearTimeout(this.animationFrameId);
+			this.animationFrameId = null;
+		}
+		return;
+	}
+	this.stepPhysics();
+	this.throttledCheckGameOver?.();
+});
 vi.spyOn(proto, 'addFruit').mockImplementation(function (
 	this: any,
 	fruitIndex: number,
@@ -32,6 +43,7 @@ vi.spyOn(proto, 'addFruit').mockImplementation(function (
 		},
 		collider: { handle: this._handle || 0 },
 		destroy: vi.fn(),
+		isOutOfBounds: vi.fn().mockReturnValue(false),
 		physicsWorld: this.physicsWorld
 	};
 	this.fruits.push(fruit);
@@ -43,7 +55,7 @@ beforeEach(() => {
 	vi.clearAllMocks();
 });
 
-describe('GameState merging', () => {
+describe('GameState Methods', () => {
 	it('merges two fruits of the same type', () => {
 		const state = new GameState({});
 		state.physicsWorld = {} as any; // mock physicsWorld
@@ -55,5 +67,72 @@ describe('GameState merging', () => {
 		expect(state.fruits.length).toBe(initialCount - 1);
 		expect(state.fruits[0].fruitIndex).toBe(1);
 		expect(state.score).toBe(FRUITS[1].points);
+	});
+
+	it('drops a fruit correctly', () => {
+		const state = new GameState({});
+		state.physicsWorld = {} as any;
+		state.setStatus('playing');
+		state.setNextFruitIndex(2);
+
+		state.dropFruit(1, 100, 100);
+
+		expect(state.fruits.length).toBe(1);
+		expect(state.fruits[0].fruitIndex).toBe(1);
+		expect(state.dropCount).toBe(1);
+		expect(state.currentFruitIndex).toBe(2);
+	});
+
+	it('handles checkGameOver', () => {
+		const state = new GameState({});
+		state.physicsWorld = {} as any;
+		state.setStatus('playing');
+
+		const fruit: any = state.addFruit(0, 0, 0);
+		fruit.isOutOfBounds.mockReturnValue(true);
+
+		state.checkGameOver();
+		expect(state.status).toBe('gameover');
+	});
+
+	it('resets game state correctly', () => {
+		const state = new GameState({});
+		state.physicsWorld = {} as any;
+		state.fruits = [{ destroy: vi.fn() }] as any;
+		state.score = 100;
+		state.dropCount = 5;
+		state.telemetry = { reset: vi.fn() } as any;
+		state.leaderboard = { reset: vi.fn() } as any;
+
+		state.resetGame();
+
+		expect(state.fruits.length).toBe(0);
+		expect(state.score).toBe(0);
+		expect(state.dropCount).toBe(0);
+		expect(state.status).toBe('uninitialized');
+	});
+
+	it('restarts game correctly', () => {
+		const state = new GameState({});
+		state.resetGame = vi.fn();
+		state.telemetry = { reset: vi.fn(), setSession: vi.fn() } as any;
+		state.leaderboard = {
+			reset: vi.fn(),
+			startSession: vi.fn().mockResolvedValue(undefined),
+			sessionToken: 'mock-token'
+		} as any;
+
+		state.restartGame();
+
+		expect(state.resetGame).toHaveBeenCalled();
+		expect(state.leaderboard.startSession).toHaveBeenCalled();
+		expect(state.status).toBe('playing');
+	});
+
+	it('setStatus handles animation frame cancellation', () => {
+		const state = new GameState({});
+		state.animationFrameId = 123 as any;
+		state.setStatus('paused');
+		expect(state.animationFrameId).toBeNull();
 	});
 });

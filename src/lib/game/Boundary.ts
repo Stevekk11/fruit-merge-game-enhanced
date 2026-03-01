@@ -1,10 +1,10 @@
 import {
 	ActiveEvents,
-	Collider,
+	type Collider,
 	ColliderDesc,
-	RigidBody,
+	type RigidBody,
 	RigidBodyDesc,
-	World
+	type World
 } from '@dimforge/rapier2d-compat';
 
 export class Boundary {

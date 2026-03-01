@@ -1,16 +1,16 @@
 <script lang="ts">
-	import { GAME_WIDTH, GAME_WIDTH_PX } from '../constants';
+import { GAME_WIDTH, GAME_WIDTH_PX } from '../constants';
 
-	interface MergeEffectProps {
-		radius: number;
-		scale?: number;
-		duration?: number;
-	}
+interface MergeEffectProps {
+	radius: number;
+	scale?: number;
+	duration?: number;
+}
 
-	let { radius, scale = 1, duration = 1000 }: MergeEffectProps = $props();
+let { radius, scale = 1, duration = 1000 }: MergeEffectProps = $props();
 
-	const scaledGameWidthPx = $derived(GAME_WIDTH_PX * scale);
-	const width = $derived(((radius * 2) / GAME_WIDTH) * scaledGameWidthPx);
+const scaledGameWidthPx = $derived(GAME_WIDTH_PX * scale);
+const width = $derived(((radius * 2) / GAME_WIDTH) * scaledGameWidthPx);
 </script>
 
 <!-- svelte-ignore element_invalid_self_closing_tag -->

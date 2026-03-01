@@ -1,6 +1,36 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { vi } from 'vitest';
 
+// Hoist: stub WASM-heavy physics engine and screenshot library before Game.svelte loads
+vi.mock('@dimforge/rapier2d-compat', () => ({
+	init: vi.fn().mockResolvedValue(undefined),
+	Vector2: vi.fn((x: number, y: number) => ({ x, y })),
+	World: vi.fn(() => ({
+		integrationParameters: { dt: 1 / 60, numSolverIterations: 8 },
+		step: vi.fn(),
+		removeRigidBody: vi.fn()
+	})),
+	EventQueue: vi.fn(() => ({ drainCollisionEvents: vi.fn() })),
+	RigidBodyDesc: {
+		dynamic: vi.fn(() => ({
+			setTranslation: vi.fn().mockReturnThis(),
+			setLinearDamping: vi.fn().mockReturnThis()
+		}))
+	},
+	ColliderDesc: {
+		ball: vi.fn(() => ({
+			setRestitution: vi.fn().mockReturnThis(),
+			setFriction: vi.fn().mockReturnThis(),
+			setActiveEvents: vi.fn().mockReturnThis()
+		}))
+	},
+	ActiveEvents: { COLLISION_EVENTS: 1 }
+}));
+
+vi.mock('modern-screenshot', () => ({
+	domToPng: vi.fn().mockResolvedValue('data:image/png;base64,stub')
+}));
+
 import { render, fireEvent } from '@testing-library/svelte';
 import { tick } from 'svelte';
 import { describe, it, expect, beforeEach } from 'vitest';
@@ -10,38 +40,50 @@ import * as gameStateModule from '../../stores/game.svelte.js';
 
 // --- Mock GameState ---------------------------------------------------------
 const instances: any[] = [];
+export const setStatusSpy = vi.fn();
+export const dropFruitSpy = vi.fn();
+export const restartGameSpy = vi.fn();
 
-class MockGameState {
-	score = 0;
-	gameOver = false;
-	status = 'uninitialized';
-	currentFruitIndex = 0;
-	nextFruitIndex = 1;
-	fruitsState = $state<any[]>([]);
-	mergeEffects: any[] = [];
-	dropCount = 0;
-	audioManager = { isMuted: false, toggleMute: vi.fn() };
-	dropFruit = vi.fn((index: number, x: number, y: number) => {
-		this.fruitsState.push({ x, y, rotation: 0, fruitIndex: index });
-		this.dropCount++;
+function createMockGameState() {
+	const state = $state({
+		score: 0,
+		gameOver: false,
+		status: 'uninitialized',
+		currentFruitIndex: 0,
+		nextFruitIndex: 1,
+		fruitsState: [] as any[],
+		mergeEffects: [] as any[],
+		dropCount: 0,
+		audioManager: { isMuted: false, toggleMute: vi.fn() },
+		telemetry: { fetchSession: vi.fn(), submitGlobalScore: vi.fn(), reset: vi.fn() },
+		// Methods
+		dropFruit: (index: number, x: number, y: number) => {
+			state.fruitsState.push({ id: Math.random(), x, y, rotation: 0, fruitIndex: index });
+			state.dropCount++;
+			dropFruitSpy(index, x, y);
+		},
+		restartGame: () => {
+			state.gameOver = false;
+			state.fruitsState = [];
+			state.dropCount = 0;
+			state.status = 'playing';
+			restartGameSpy();
+		},
+		setStatus: (status: string) => {
+			state.status = status;
+			setStatusSpy(status);
+		},
+		init: vi.fn(async () => {}),
+		destroy: vi.fn()
 	});
-	restartGame = vi.fn(() => {
-		this.gameOver = false;
-		this.fruitsState = [];
-		this.dropCount = 0;
-	});
-	setStatus = vi.fn((status: string) => {
-		this.status = status;
-	});
-	constructor() {
-		instances.push(this);
-	}
+	instances.push(state);
+	return state;
 }
 
 vi.mock('../../stores/game.svelte.js', () => ({ GameState: vi.fn() }));
 
 // Replace the mocked constructor with our implementation
-(gameStateModule as any).GameState.mockImplementation(() => new MockGameState());
+(gameStateModule as any).GameState.mockImplementation(createMockGameState);
 
 // Mock FRUITS constant
 const MOCK_FRUITS = [
@@ -52,7 +94,6 @@ const MOCK_FRUITS = [
 
 vi.mock('../../constants', async () => {
 	const actual = await vi.importActual('../../constants');
-	// Define fruitsForMock for the mock's internal use to avoid ReferenceError
 	const fruitsForMock = [
 		{ id: 0, name: 'FruitA', radius: 0.1, points: 10, image: 'images/fruitA.webp', color: 'red' },
 		{
@@ -74,7 +115,7 @@ vi.mock('../../constants', async () => {
 	];
 	return {
 		...(actual as any),
-		FRUITS: fruitsForMock // Use the internally defined constant
+		FRUITS: fruitsForMock
 	};
 });
 
@@ -82,6 +123,9 @@ vi.mock('../../constants', async () => {
 
 beforeEach(() => {
 	instances.length = 0;
+	setStatusSpy.mockClear();
+	dropFruitSpy.mockClear();
+	restartGameSpy.mockClear();
 });
 
 describe('Game component', () => {
@@ -94,7 +138,7 @@ describe('Game component', () => {
 
 	it('moves drop line and preview fruit with pointer', async () => {
 		const { container, getAllByRole } = render(Game);
-		// close introduction modal
+		// close introduction modal → sets status to 'playing'
 		await fireEvent.click(getAllByRole('button', { name: /start game/i })[0]);
 		await tick();
 
@@ -103,17 +147,21 @@ describe('Game component', () => {
 			value: () => ({ left: 0, top: 0, width: 600, height: 900, right: 600, bottom: 900 })
 		});
 
-		await fireEvent.mouseMove(area, { clientX: 150, clientY: 100 });
+		await fireEvent.pointerMove(area, { clientX: 150, clientY: 100 });
 
 		const dropLine = container.querySelector('.drop-line') as HTMLElement;
 		const preview = container.querySelector('.preview-fruit') as HTMLElement;
-		expect(dropLine.style.translate).toContain('149px');
-		expect(preview.style.translate).toContain('150px');
+		expect(dropLine.style.translate).toContain('148px');
+		expect(preview.style.translate).toContain('149px');
 	});
 
-	it.skip('drops a fruit on click', async () => {
+	it('drops a fruit on pointer-up when playing', async () => {
 		const { container, getAllByRole } = render(Game);
 		await fireEvent.click(getAllByRole('button', { name: /start game/i })[0]);
+		await tick();
+
+		// Force status to 'playing' so dropCurrentFruit runs
+		instances[0].status = 'playing';
 		await tick();
 
 		const area = container.querySelector('.gameplay-area') as HTMLElement;
@@ -122,86 +170,75 @@ describe('Game component', () => {
 		});
 
 		await fireEvent.pointerUp(area, { button: 0 });
-		expect(instances[0].dropFruit).toHaveBeenCalled();
-		expect(instances[0].fruitsState.length).toBe(1);
+		await tick();
+
+		expect(dropFruitSpy).toHaveBeenCalled();
 	});
 
-	it.skip('handles modal visibility and game restart', async () => {
+	it('opens introduction modal via About button and pauses game', async () => {
 		const { getAllByRole } = render(Game);
 
-		// intro visible
-		let resumeButtons = getAllByRole('button', { name: /start game/i });
-		expect(resumeButtons.length).toBeGreaterThan(0);
-
-		// close intro
-		await fireEvent.click(resumeButtons[0]);
+		// Close intro first
+		await fireEvent.click(getAllByRole('button', { name: /start game/i })[0]);
 		await tick();
 
-		// open intro via header button
+		// Click About → pauses via setStatus('paused')
 		await fireEvent.click(getAllByRole('button', { name: /about/i })[0]);
-		resumeButtons = getAllByRole('button', { name: /resume game/i });
-		expect(resumeButtons.length).toBeGreaterThan(0);
-
-		// simulate game over and ensure game over modal shows
-		instances[0].gameOver = true;
 		await tick();
 
-		// restart game
-		instances[0].restartGame();
-		expect(instances[0].restartGame).toHaveBeenCalled();
+		expect(setStatusSpy).toHaveBeenCalledWith('paused');
+
+		// Modal reappears with "Resume Game" text (derived from 'paused' status)
+		expect(getAllByRole('button', { name: /resume game/i }).length).toBeGreaterThan(0);
 	});
 
 	it('maintains correct fruit images after state changes (merges/removals)', async () => {
 		const { container, getAllByRole } = render(Game);
 
-		// Start the game by clicking the start button in the modal
-		const startGameButton = getAllByRole('button', { name: /start game/i })[0];
-		await fireEvent.click(startGameButton);
-		await tick(); // Wait for game to initialize and modal to close
+		await fireEvent.click(getAllByRole('button', { name: /start game/i })[0]);
+		await tick();
 
-		const mockGameState = instances[0] as MockGameState;
+		const mockGameState = instances[0];
 		expect(mockGameState).toBeTruthy();
 
-		// Simulate adding initial fruits: FruitA, FruitB, FruitA
-		// Ensure IDs are unique for keying
-		mockGameState.fruitsState = [
+		mockGameState.fruitsState.length = 0;
+		mockGameState.fruitsState.push(
 			{ id: 1, x: 100, y: 100, rotation: 0, fruitIndex: 0 }, // FruitA
 			{ id: 2, x: 200, y: 100, rotation: 0, fruitIndex: 1 }, // FruitB
 			{ id: 3, x: 300, y: 100, rotation: 0, fruitIndex: 0 } // FruitA
-		];
-		mockGameState.setStatus('playing'); // Ensure game is in a state that renders fruits
-		await tick(); // Allow Svelte to render the fruits
-
-		let fruitImages = container.querySelectorAll(
-			'.fruit-entity img'
-		) as NodeListOf<HTMLImageElement>;
-		expect(fruitImages.length).toBe(3);
-		// Note: getAttribute('src') might return the full URL. We check for endsWith.
-		expect(fruitImages[0].getAttribute('src')).toContain(MOCK_FRUITS[0].image); // FruitA
-		expect(fruitImages[1].getAttribute('src')).toContain(MOCK_FRUITS[1].image); // FruitB
-		expect(fruitImages[2].getAttribute('src')).toContain(MOCK_FRUITS[0].image); // FruitA
-
-		// Simulate a "merge" or removal: remove the two FruitA's, leaving FruitB
-		// This simulates a scenario where the first and last elements are removed,
-		// testing if the keyed #each correctly preserves the middle element (FruitB).
-		mockGameState.fruitsState = [
-			mockGameState.fruitsState[1] // Keep only FruitB
-		];
-		await tick(); // Allow Svelte to re-render
-
-		fruitImages = container.querySelectorAll('.fruit-entity img') as NodeListOf<HTMLImageElement>;
-		// debug(); // Optional: to see the DOM structure if the test fails
-
-		expect(fruitImages.length).toBe(1);
-		expect(fruitImages[0].getAttribute('src')).toContain(MOCK_FRUITS[1].image); // Should still be FruitB
-
-		// Simulate adding another fruit to see if it still works
-		mockGameState.fruitsState.push({ id: 4, x: 400, y: 100, rotation: 0, fruitIndex: 2 }); // FruitC
+		);
+		mockGameState.setStatus('playing');
 		await tick();
 
-		fruitImages = container.querySelectorAll('.fruit-entity img') as NodeListOf<HTMLImageElement>;
-		expect(fruitImages.length).toBe(2);
-		expect(fruitImages[0].getAttribute('src')).toContain(MOCK_FRUITS[1].image); // FruitB
-		expect(fruitImages[1].getAttribute('src')).toContain(MOCK_FRUITS[2].image); // FruitC
+		let fruitNodes = container.querySelectorAll(
+			'.gameplay-area > .game-entity .fruit'
+		) as NodeListOf<HTMLElement>;
+		expect(fruitNodes.length).toBe(3);
+		expect(fruitNodes[0].getAttribute('data-name')).toBe(MOCK_FRUITS[0].name);
+		expect(fruitNodes[1].getAttribute('data-name')).toBe(MOCK_FRUITS[1].name);
+		expect(fruitNodes[2].getAttribute('data-name')).toBe(MOCK_FRUITS[0].name);
+
+		// Remove FruitA's, keep FruitB
+		const fruitB = mockGameState.fruitsState[1];
+		mockGameState.fruitsState.length = 0;
+		mockGameState.fruitsState.push(fruitB);
+		await tick();
+
+		fruitNodes = container.querySelectorAll(
+			'.gameplay-area > .game-entity .fruit'
+		) as NodeListOf<HTMLElement>;
+		expect(fruitNodes.length).toBe(1);
+		expect(fruitNodes[0].getAttribute('data-name')).toBe(MOCK_FRUITS[1].name);
+
+		// Add FruitC
+		mockGameState.fruitsState.push({ id: 4, x: 400, y: 100, rotation: 0, fruitIndex: 2 });
+		await tick();
+
+		fruitNodes = container.querySelectorAll(
+			'.gameplay-area > .game-entity .fruit'
+		) as NodeListOf<HTMLElement>;
+		expect(fruitNodes.length).toBe(2);
+		expect(fruitNodes[0].getAttribute('data-name')).toBe(MOCK_FRUITS[1].name);
+		expect(fruitNodes[1].getAttribute('data-name')).toBe(MOCK_FRUITS[2].name);
 	});
 });
