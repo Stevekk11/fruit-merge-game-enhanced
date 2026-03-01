@@ -67,7 +67,7 @@ function handleStartClick() {
           <var class="score-value">{Intl.NumberFormat().format(score)}</var>
         </div>
 
-        {#if submissionStatus !== "success"}
+        {#if score > 0 && submissionStatus !== "success"}
           <form class="global-submit" onsubmit={handleGlobalSubmit}>
             <input
               type="text"
