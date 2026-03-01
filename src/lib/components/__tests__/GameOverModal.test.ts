@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, fireEvent, waitFor, cleanup } from '@testing-library/svelte';
+import { render, waitFor, cleanup } from '@testing-library/svelte';
 import GameOverModal from '../GameOverModal.svelte';
 import type { GameState } from '../../stores/game.svelte';
 
@@ -14,7 +14,7 @@ const makeGameState = (overrides: Record<string, unknown> = {}): GameState =>
 		score: 1500,
 		telemetry: {
 			buildSubmissionPayload: vi.fn().mockResolvedValue({
-				username: 'Player1',
+				username: null,
 				finalScore: 1500,
 				sessionToken: 'mock-token',
 				milestones: [],
@@ -28,9 +28,15 @@ const makeGameState = (overrides: Record<string, unknown> = {}): GameState =>
 			submissionStatus: 'idle',
 			sessionToken: 'mock-token',
 			submitScore: vi.fn().mockResolvedValue({ success: true }),
-			globalScores: [],
-			globalScoresStatus: 'idle',
-			fetchGlobalScores: vi.fn(),
+			dailyScores: [],
+			dailyScoresStatus: 'idle',
+			overallScores: [],
+			overallScoresStatus: 'idle',
+			fetchDailyScores: vi.fn(),
+			fetchOverallScores: vi.fn(),
+			editToken: null,
+			submittedId: null,
+			submittedRank: null,
 			...((overrides.leaderboard as object) ?? {})
 		},
 		...overrides
@@ -45,137 +51,125 @@ afterEach(() => {
 });
 
 describe('GameOverModal', () => {
-	it('renders the formatted final score when open', async () => {
+	it('renders the modal heading when open', async () => {
 		const gameState = makeGameState();
 		const { container } = render(GameOverModal, {
 			props: { open: true, score: 1500, onClose: vi.fn(), gameState }
 		});
 		await waitFor(() => {
-			expect(container.querySelector('.score-value')?.textContent?.trim()).toContain('1,500');
+			expect(container.querySelector('.heading')?.textContent?.trim()).toContain(
+				'Thanks for playing!'
+			);
 		});
 	});
 
-	it('shows the global submission form when gameState is provided and not yet submitted', async () => {
-		const gameState = makeGameState();
-		const { container } = render(GameOverModal, {
-			props: { open: true, score: 1500, onClose: vi.fn(), gameState }
-		});
-		await waitFor(() => {
-			expect(container.querySelector('.global-submit')).not.toBeNull();
-			expect(container.querySelector('input[type="text"]')).not.toBeNull();
-		});
-	});
-
-	it('hides the submission form after successful submit', async () => {
+	it('auto-submits score on open when submissionStatus is idle', async () => {
 		const submitScore = vi.fn().mockResolvedValue({ success: true });
 		const gameState = makeGameState({
 			leaderboard: {
 				submissionStatus: 'idle',
 				sessionToken: 'mock-token',
 				submitScore,
-				globalScores: [],
-				globalScoresStatus: 'idle',
-				fetchGlobalScores: vi.fn()
+				dailyScores: [],
+				dailyScoresStatus: 'idle',
+				overallScores: [],
+				overallScoresStatus: 'idle',
+				fetchDailyScores: vi.fn(),
+				fetchOverallScores: vi.fn(),
+				editToken: null,
+				submittedId: null,
+				submittedRank: null
 			}
 		});
-		const { getAllByRole, container } = render(GameOverModal, {
+
+		render(GameOverModal, {
 			props: { open: true, score: 1500, onClose: vi.fn(), gameState }
 		});
 
-		const input = container.querySelector('input') as HTMLInputElement;
-		await fireEvent.input(input, {
-			target: { value: 'TKP' }
-		});
-
-		const submitBtn = getAllByRole('button', { name: /submit score/i })[0];
-		await fireEvent.click(submitBtn);
-
 		await waitFor(() => {
+			expect(gameState.telemetry.buildSubmissionPayload).toHaveBeenCalled();
 			expect(submitScore).toHaveBeenCalled();
 		});
 	});
 
-	it('shows error message on failed submission', async () => {
-		const submitScore = vi.fn().mockResolvedValue({ success: false, error: 'Bad request' });
+	it('does not auto-submit when submissionStatus is already success', async () => {
+		const submitScore = vi.fn().mockResolvedValue({ success: true });
 		const gameState = makeGameState({
 			leaderboard: {
-				submissionStatus: 'idle',
+				submissionStatus: 'success',
 				sessionToken: 'mock-token',
 				submitScore,
-				globalScores: [],
-				globalScoresStatus: 'idle',
-				fetchGlobalScores: vi.fn()
+				dailyScores: [],
+				dailyScoresStatus: 'success',
+				overallScores: [],
+				overallScoresStatus: 'idle',
+				fetchDailyScores: vi.fn(),
+				fetchOverallScores: vi.fn(),
+				editToken: null,
+				submittedId: null,
+				submittedRank: null
 			}
 		});
-		const { getAllByRole, container } = render(GameOverModal, {
+
+		render(GameOverModal, {
 			props: { open: true, score: 1500, onClose: vi.fn(), gameState }
 		});
 
-		const input = container.querySelector('input') as HTMLInputElement;
-		await fireEvent.input(input, {
-			target: { value: 'TKP' }
+		// Give effects time to run
+		await new Promise((r) => setTimeout(r, 50));
+
+		expect(submitScore).not.toHaveBeenCalled();
+	});
+
+	it('does not auto-submit when there is no session token', async () => {
+		const submitScore = vi.fn().mockResolvedValue({ success: true });
+		const gameState = makeGameState({
+			leaderboard: {
+				submissionStatus: 'idle',
+				sessionToken: null,
+				submitScore,
+				dailyScores: [],
+				dailyScoresStatus: 'idle',
+				overallScores: [],
+				overallScoresStatus: 'idle',
+				fetchDailyScores: vi.fn(),
+				fetchOverallScores: vi.fn(),
+				editToken: null,
+				submittedId: null,
+				submittedRank: null
+			}
 		});
 
-		await fireEvent.click(getAllByRole('button', { name: /submit score/i })[0]);
-
-		await waitFor(() => {
-			expect(submitScore).toHaveBeenCalled();
+		render(GameOverModal, {
+			props: { open: true, score: 1500, onClose: vi.fn(), gameState }
 		});
+
+		await new Promise((r) => setTimeout(r, 50));
+
+		expect(submitScore).not.toHaveBeenCalled();
 	});
 
 	it('is not visible when open is false', () => {
 		const { container } = render(GameOverModal, {
 			props: { open: false, score: 0, onClose: vi.fn(), gameState: null }
 		});
-		expect(container.querySelector('.score-value')).toBeNull();
+		expect(container.querySelector('.heading')).toBeNull();
 	});
 
-	it('initializes username from localStorage if available', async () => {
-		// Set localStorage before render
+	it('uses stored initials from localStorage in auto-submit payload', async () => {
 		window.localStorage.setItem('subak_initials', 'ABC');
 
-		const gameState = makeGameState();
-		const { container } = render(GameOverModal, {
+		const buildSubmissionPayload = vi.fn().mockResolvedValue({ finalScore: 1500 });
+		const gameState = makeGameState({ telemetry: { buildSubmissionPayload } });
+
+		render(GameOverModal, {
 			props: { open: true, score: 1500, onClose: vi.fn(), gameState }
 		});
 
 		await waitFor(() => {
-			const input = container.querySelector('input') as HTMLInputElement;
-			expect(input.value).toBe('ABC');
+			expect(buildSubmissionPayload).toHaveBeenCalledWith('ABC', 1500, 'mock-token');
 		});
-	});
 
-	it('saves username to localStorage on successful submit', async () => {
-		// Clear local storage first
 		window.localStorage.removeItem('subak_initials');
-
-		const submitScore = vi.fn().mockResolvedValue({ success: true });
-		const gameState = makeGameState({
-			leaderboard: {
-				submissionStatus: 'idle',
-				sessionToken: 'mock-token',
-				submitScore,
-				globalScores: [],
-				globalScoresStatus: 'idle',
-				fetchGlobalScores: vi.fn()
-			}
-		});
-
-		const { getAllByRole, container } = render(GameOverModal, {
-			props: { open: true, score: 1500, onClose: vi.fn(), gameState }
-		});
-
-		const input = container.querySelector('input') as HTMLInputElement;
-		await fireEvent.input(input, {
-			target: { value: 'XYZ' }
-		});
-
-		const submitBtn = getAllByRole('button', { name: /submit score/i })[0];
-		await fireEvent.click(submitBtn);
-
-		await waitFor(() => {
-			expect(submitScore).toHaveBeenCalled();
-			expect(window.localStorage.getItem('subak_initials')).toBe('XYZ');
-		});
 	});
 });
