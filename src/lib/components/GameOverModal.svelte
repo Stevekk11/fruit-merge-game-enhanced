@@ -37,7 +37,8 @@ $effect(() => {
 
 async function handleGlobalSubmit(e: Event) {
 	e.preventDefault();
-	if (!username.trim() || username.length !== 3 || isSubmitting) return;
+	const trimmedUsername = username.trim();
+	if ((trimmedUsername.length > 0 && trimmedUsername.length !== 3) || isSubmitting) return;
 
 	const token = gameState.leaderboard.sessionToken;
 	if (!token) {
@@ -45,7 +46,11 @@ async function handleGlobalSubmit(e: Event) {
 		return;
 	}
 
-	const payload = await gameState.telemetry.buildSubmissionPayload(username.trim(), score, token);
+	const payload = await gameState.telemetry.buildSubmissionPayload(
+		trimmedUsername || null,
+		score,
+		token
+	);
 	if (!payload) return;
 
 	const result = await gameState.leaderboard.submitScore(payload);
@@ -80,7 +85,9 @@ function handleStartClick() {
 
         {#if score > 0 && submissionStatus !== "success"}
           <form class="global-submit" onsubmit={handleGlobalSubmit}>
-            <div class="input-label">Enter 3 Initials for Global</div>
+            <div class="input-label">
+              Enter 3 Initials for Global (Optional)
+            </div>
             <input
               type="text"
               class="initials-input"
@@ -92,7 +99,8 @@ function handleStartClick() {
             />
             <button
               type="submit"
-              disabled={isSubmitting || username.length !== 3}
+              disabled={isSubmitting ||
+                (username.trim().length > 0 && username.trim().length !== 3)}
             >
               {isSubmitting ? "Submitting..." : "Submit Score"}
             </button>
