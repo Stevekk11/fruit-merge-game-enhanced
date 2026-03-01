@@ -64,12 +64,15 @@ $effect(() => {
 	});
 });
 
+let initialsSubmitted = $state(false);
+
 async function handleUsernameSubmit() {
 	const trimmed = usernameInput.trim().toUpperCase();
 	if (trimmed.length !== 3 && trimmed.length !== 0) return;
 	if (!leaderboardClient) return;
 
 	await leaderboardClient.updateUsername(trimmed);
+	initialsSubmitted = true;
 	if (typeof window !== 'undefined') {
 		window.localStorage.setItem('subak_initials', trimmed);
 	}
@@ -78,11 +81,22 @@ async function handleUsernameSubmit() {
 const formatter = new Intl.DateTimeFormat('en-US', {
 	year: '2-digit',
 	month: '2-digit',
-	day: '2-digit'
+	day: '2-digit',
+	timeZone: 'America/Los_Angeles'
+});
+
+const timeFormatter = new Intl.DateTimeFormat('en-US', {
+	hour: '2-digit',
+	minute: '2-digit',
+	timeZone: 'America/Los_Angeles'
 });
 </script>
 
-{#snippet scoreTable(scores: LeaderboardScore[], showInput: boolean)}
+{#snippet scoreTable(
+  scores: LeaderboardScore[],
+  showInput: boolean,
+  mode: "daily" | "overall" | "local",
+)}
   <div class="scoresScroll">
     {#if scores && scores.length > 0}
       <table>
@@ -90,13 +104,10 @@ const formatter = new Intl.DateTimeFormat('en-US', {
           {#each scores as score, index (score.id)}
             {@const rank = index + 1}
             {@const isSubmitted = leaderboardClient?.submittedId === score.id}
-            <tr
-              data-id={score.id}
-              class:highlight={isSubmitted}
-            >
+            <tr data-id={score.id} class:highlight={isSubmitted}>
               <td class="rank">{rank}</td>
               <td class="username">
-                {#if isSubmitted && showInput}
+                {#if isSubmitted && showInput && !initialsSubmitted}
                   <input
                     class="initials-input"
                     type="text"
@@ -106,19 +117,25 @@ const formatter = new Intl.DateTimeFormat('en-US', {
                     data-1p-ignore
                     onkeydown={(e) => {
                       usernameInput = usernameInput.toUpperCase();
-                      if (e.key === 'Enter') handleUsernameSubmit();
+                      if (e.key === "Enter") handleUsernameSubmit();
                     }}
-                    oninput={() => { usernameInput = usernameInput.toUpperCase(); }}
+                    oninput={() => {
+                      usernameInput = usernameInput.toUpperCase();
+                    }}
                     placeholder="???"
                   />
                 {:else}
-                  {score.username || '???'}
+                  {score.username || "???"}
                 {/if}
               </td>
               <td class="score">
                 <strong>{Intl.NumberFormat().format(score.score)}</strong>
               </td>
-              <td class="createdAt">{formatter.format(score.date)}</td>
+              <td class="createdAt"
+                >{mode === "daily"
+                  ? timeFormatter.format(score.date)
+                  : formatter.format(score.date)}</td
+              >
             </tr>
           {/each}
         </tbody>
@@ -156,24 +173,28 @@ const formatter = new Intl.DateTimeFormat('en-US', {
 
 {#snippet dailyPanel()}
   <div class="scores">
-    {#if leaderboardClient?.dailyScoresStatus === 'loading'}
+    {#if leaderboardClient?.dailyScoresStatus === "loading"}
       <div class="empty">Loading...</div>
-    {:else if leaderboardClient?.dailyScoresStatus === 'error'}
+    {:else if leaderboardClient?.dailyScoresStatus === "error"}
       <div class="empty">Failed to load scores.</div>
     {:else}
-      {@render scoreTable(leaderboardClient?.dailyScores ?? [], true)}
+      {@render scoreTable(leaderboardClient?.dailyScores ?? [], true, "daily")}
     {/if}
   </div>
 {/snippet}
 
 {#snippet overallPanel()}
   <div class="scores">
-    {#if leaderboardClient?.overallScoresStatus === 'loading'}
+    {#if leaderboardClient?.overallScoresStatus === "loading"}
       <div class="empty">Loading...</div>
-    {:else if leaderboardClient?.overallScoresStatus === 'error'}
+    {:else if leaderboardClient?.overallScoresStatus === "error"}
       <div class="empty">Failed to load scores.</div>
     {:else}
-      {@render scoreTable(leaderboardClient?.overallScores ?? [], false)}
+      {@render scoreTable(
+        leaderboardClient?.overallScores ?? [],
+        false,
+        "overall",
+      )}
     {/if}
   </div>
 {/snippet}
@@ -182,11 +203,12 @@ const formatter = new Intl.DateTimeFormat('en-US', {
   <Tabs
     bind:value={activeTab}
     tabs={[
-      { value: 'daily', label: 'Daily', content: dailyPanel },
-      { value: 'overall', label: 'Overall', content: overallPanel },
-      { value: 'local', label: 'Local', content: localScoresPanel }
+      { value: "daily", label: "Daily", content: dailyPanel },
+      { value: "overall", label: "Overall", content: overallPanel },
+      { value: "local", label: "Local", content: localScoresPanel },
     ]}
   />
+  <div class="time-disclaimer">(All times are USA/California based)</div>
 </div>
 
 <style>
@@ -212,8 +234,8 @@ const formatter = new Intl.DateTimeFormat('en-US', {
 
   .scoresScroll {
     mask-image: linear-gradient(to top, rgba(0, 0, 0, 0) 0%, rgb(0, 0, 0) 1em);
-    min-width: 10em;
-    height: 7.5em;
+    min-width: 17em;
+    height: 15em;
     overflow-y: auto;
     overflow-x: hidden;
   }
@@ -233,6 +255,10 @@ const formatter = new Intl.DateTimeFormat('en-US', {
 
   .score {
     text-align: right;
+  }
+
+  .time-disclaimer {
+    font-size: 0.8em;
   }
 
   table {
