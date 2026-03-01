@@ -18,29 +18,55 @@ type AsyncStatus = 'idle' | 'loading' | 'success' | 'error';
 type SubmissionStatus = 'idle' | 'submitting' | 'success' | 'error';
 
 export class LeaderboardClient {
-	// --- Global Scores ---
-	globalScores: LeaderboardScore[] = $state([]);
-	globalScoresStatus: AsyncStatus = $state('idle');
+	// --- Daily Scores ---
+	dailyScores: LeaderboardScore[] = $state([]);
+	dailyScoresStatus: AsyncStatus = $state('idle');
 
-	async fetchGlobalScores(): Promise<void> {
-		if (this.globalScoresStatus === 'loading') return;
+	async fetchDailyScores(): Promise<void> {
+		if (this.dailyScoresStatus === 'loading') return;
 
-		this.globalScoresStatus = 'loading';
+		this.dailyScoresStatus = 'loading';
 		try {
-			const res = await fetch(`${env.PUBLIC_LEADERBOARD_URL}/api/leaderboard`);
+			const res = await fetch(`${env.PUBLIC_LEADERBOARD_URL}/api/leaderboard?type=daily`);
 			if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
 			const data = await res.json();
-			this.globalScores = data.scores.map((s: GlobalScoreResponse) => ({
+			this.dailyScores = data.scores.map((s: GlobalScoreResponse) => ({
 				id: s.id,
 				score: s.score,
 				username: s.username,
 				date: new Date(s.created_at)
 			}));
-			this.globalScoresStatus = 'success';
+			this.dailyScoresStatus = 'success';
 		} catch (err) {
-			console.error('Failed to fetch global scores', err);
-			this.globalScoresStatus = 'error';
+			console.error('Failed to fetch daily scores', err);
+			this.dailyScoresStatus = 'error';
+		}
+	}
+
+	// --- Overall Scores ---
+	overallScores: LeaderboardScore[] = $state([]);
+	overallScoresStatus: AsyncStatus = $state('idle');
+
+	async fetchOverallScores(): Promise<void> {
+		if (this.overallScoresStatus === 'loading') return;
+
+		this.overallScoresStatus = 'loading';
+		try {
+			const res = await fetch(`${env.PUBLIC_LEADERBOARD_URL}/api/leaderboard?type=overall`);
+			if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+			const data = await res.json();
+			this.overallScores = data.scores.map((s: GlobalScoreResponse) => ({
+				id: s.id,
+				score: s.score,
+				username: s.username,
+				date: new Date(s.created_at)
+			}));
+			this.overallScoresStatus = 'success';
+		} catch (err) {
+			console.error('Failed to fetch overall scores', err);
+			this.overallScoresStatus = 'error';
 		}
 	}
 
@@ -64,6 +90,9 @@ export class LeaderboardClient {
 
 	// --- Score Submission ---
 	submissionStatus: SubmissionStatus = $state('idle');
+	editToken: string | null = $state(null);
+	submittedId: number | null = $state(null);
+	submittedRank: number | null = $state(null);
 
 	async submitScore(
 		payload: Record<string, unknown>
@@ -80,9 +109,19 @@ export class LeaderboardClient {
 
 			if (data.success) {
 				this.submissionStatus = 'success';
-				// Auto-refresh global scores after successful submission
-				this.globalScoresStatus = 'idle';
-				await this.fetchGlobalScores();
+				this.editToken = data.editToken ?? null;
+				this.submittedId = data.id ?? null;
+				this.submittedRank = data.rank ?? null;
+
+				if (data.scores) {
+					this.dailyScores = data.scores.map((s: GlobalScoreResponse) => ({
+						id: s.id,
+						score: s.score,
+						username: s.username,
+						date: new Date(s.created_at)
+					}));
+					this.dailyScoresStatus = 'success';
+				}
 			} else {
 				this.submissionStatus = 'error';
 			}
@@ -95,10 +134,32 @@ export class LeaderboardClient {
 		}
 	}
 
+	// --- Update Username ---
+	async updateUsername(username: string): Promise<void> {
+		if (!this.editToken || !this.submittedId) return;
+
+		try {
+			const res = await fetch(`${env.PUBLIC_LEADERBOARD_URL}/api/leaderboard/update-username`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ editToken: this.editToken, username })
+			});
+			if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+			const id = this.submittedId;
+			this.dailyScores = this.dailyScores.map((s) => (s.id === id ? { ...s, username } : s));
+		} catch (err) {
+			console.error('Failed to update username', err);
+		}
+	}
+
 	// --- Lifecycle ---
 	reset(): void {
 		this.sessionToken = null;
 		this.submissionStatus = 'idle';
-		// Keep globalScores cached across games — they're still valid
+		this.editToken = null;
+		this.submittedId = null;
+		this.submittedRank = null;
+		// Keep scores cached across games — they're still valid
 	}
 }
