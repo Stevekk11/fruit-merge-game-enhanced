@@ -37,6 +37,10 @@ jobs:
         run: npm run build
         env:
           BASE_PATH: ${{ steps.pages.outputs.base_path }}
+          PUBLIC_LEADERBOARD_URL: ${{ vars.PUBLIC_LEADERBOARD_URL }}
+          PUBLIC_SHARED_CLIENT_SALT: ${{ vars.PUBLIC_SHARED_CLIENT_SALT }}
+          VITE_APP_VERSION: ${{ vars.VITE_APP_VERSION }}
+          VITE_POSTHOG_TOKEN: ${{ secrets.VITE_POSTHOG_TOKEN }}
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
