@@ -1,55 +1,67 @@
 <script lang="ts">
-import Modal from './Modal.svelte';
-import Leaderboard from './Leaderboard.svelte';
-import ModalCreditsFooter from './ModalCreditsFooter.svelte';
-import GameScreenshot from './GameScreenshot.svelte';
-import type { GameState } from '../stores/game.svelte';
+  import Modal from "./Modal.svelte";
+  import Leaderboard from "./Leaderboard.svelte";
+  import ModalCreditsFooter from "./ModalCreditsFooter.svelte";
+  import GameScreenshot from "./GameScreenshot.svelte";
+  import type { GameState } from "../stores/game.svelte";
 
-interface GameOverModalProps {
-	open: boolean;
-	score: number;
-	onClose: () => void;
-	gameState: GameState;
-}
-const { open, score, onClose, gameState }: GameOverModalProps = $props();
+  interface GameOverModalProps {
+    open: boolean;
+    score: number;
+    onClose: () => void;
+    gameState: GameState;
+  }
+  const { open, score, onClose, gameState }: GameOverModalProps = $props();
 
-let tab = $state<'local' | 'global'>('local');
-let username = $state('');
+  let tab = $state<"local" | "global">("local");
+  let username = $state("");
 
-let leaderboardRef: ReturnType<typeof Leaderboard> | null = $state(null);
+  $effect(() => {
+    if (username) {
+      username = username.toUpperCase();
+    }
+  });
 
-const isSubmitting = $derived(gameState.leaderboard.submissionStatus === 'submitting');
-const submissionStatus = $derived(gameState.leaderboard.submissionStatus);
+  let leaderboardRef: ReturnType<typeof Leaderboard> | null = $state(null);
 
-$effect(() => {
-	if (open && tab === 'local' && leaderboardRef) {
-		leaderboardRef.fetchLocalScores();
-	}
-});
+  const isSubmitting = $derived(
+    gameState.leaderboard.submissionStatus === "submitting",
+  );
+  const submissionStatus = $derived(gameState.leaderboard.submissionStatus);
 
-async function handleGlobalSubmit(e: Event) {
-	e.preventDefault();
-	if (!username.trim() || isSubmitting) return;
+  $effect(() => {
+    if (open && tab === "local" && leaderboardRef) {
+      leaderboardRef.fetchLocalScores();
+    }
+  });
 
-	const token = gameState.leaderboard.sessionToken;
-	if (!token) {
-		console.error('Cannot submit: no session token');
-		return;
-	}
+  async function handleGlobalSubmit(e: Event) {
+    e.preventDefault();
+    if (!username.trim() || username.length !== 3 || isSubmitting) return;
 
-	const payload = await gameState.telemetry.buildSubmissionPayload(username.trim(), score, token);
-	if (!payload) return;
+    const token = gameState.leaderboard.sessionToken;
+    if (!token) {
+      console.error("Cannot submit: no session token");
+      return;
+    }
 
-	const result = await gameState.leaderboard.submitScore(payload);
+    const payload = await gameState.telemetry.buildSubmissionPayload(
+      username.trim(),
+      score,
+      token,
+    );
+    if (!payload) return;
 
-	if (result.success) {
-		tab = 'global';
-	}
-}
+    const result = await gameState.leaderboard.submitScore(payload);
 
-function handleStartClick() {
-	onClose();
-}
+    if (result.success) {
+      tab = "global";
+    }
+  }
+
+  function handleStartClick() {
+    onClose();
+  }
 </script>
 
 {#snippet append()}
@@ -69,15 +81,20 @@ function handleStartClick() {
 
         {#if score > 0 && submissionStatus !== "success"}
           <form class="global-submit" onsubmit={handleGlobalSubmit}>
+            <div class="input-label">Enter 3 Initials for Global</div>
             <input
               type="text"
+              class="initials-input"
               bind:value={username}
-              placeholder="Enter name for global"
-              maxlength="20"
-              required
+              maxlength="3"
               disabled={isSubmitting}
+              autocomplete="off"
+              data-1p-ignore
             />
-            <button type="submit" disabled={isSubmitting || !username.trim()}>
+            <button
+              type="submit"
+              disabled={isSubmitting || username.length !== 3}
+            >
               {isSubmitting ? "Submitting..." : "Submit Score"}
             </button>
             {#if submissionStatus === "error"}
@@ -154,11 +171,30 @@ function handleStartClick() {
     border: 1px solid var(--color-border, #ccc);
   }
 
-  .global-submit input {
-    padding: 0.5em;
-    border-radius: 4px;
-    border: 1px solid #ccc;
+  .global-submit .input-label {
+    font-size: 0.9em;
+    color: var(--color-text-muted, #666);
+    margin-bottom: 0.25em;
+  }
+
+  .initials-input {
+    width: 6rem;
+    padding: 0.25em;
+    font-size: 1.5em;
+    font-family: monospace;
+    font-variant-numeric: tabular-nums;
     text-align: center;
+    letter-spacing: 0.25em;
+    border-radius: 8px;
+    border: 2px solid var(--color-border, #ccc);
+    background: var(--color-background-light, #fff);
+    color: var(--color-text, #333);
+    text-transform: uppercase;
+  }
+
+  .initials-input:focus {
+    outline: var(--color-focus-outline, rgb(2, 191, 96)) 2px solid;
+    border-color: transparent;
   }
 
   .error-msg {

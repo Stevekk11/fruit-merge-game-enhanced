@@ -78,12 +78,13 @@ describe('GameOverModal', () => {
 				fetchGlobalScores: vi.fn()
 			}
 		});
-		const { getAllByRole, getByPlaceholderText } = render(GameOverModal, {
+		const { getAllByRole, container } = render(GameOverModal, {
 			props: { open: true, score: 1500, onClose: vi.fn(), gameState }
 		});
 
-		await fireEvent.input(getByPlaceholderText(/enter name/i), {
-			target: { value: 'Player1' }
+		const input = container.querySelector('input') as HTMLInputElement;
+		await fireEvent.input(input, {
+			target: { value: 'TKP' }
 		});
 
 		const submitBtn = getAllByRole('button', { name: /submit score/i })[0];
@@ -106,12 +107,13 @@ describe('GameOverModal', () => {
 				fetchGlobalScores: vi.fn()
 			}
 		});
-		const { getAllByRole, getByPlaceholderText } = render(GameOverModal, {
+		const { getAllByRole, container } = render(GameOverModal, {
 			props: { open: true, score: 1500, onClose: vi.fn(), gameState }
 		});
 
-		await fireEvent.input(getByPlaceholderText(/enter name/i), {
-			target: { value: 'Player1' }
+		const input = container.querySelector('input') as HTMLInputElement;
+		await fireEvent.input(input, {
+			target: { value: 'TKP' }
 		});
 
 		await fireEvent.click(getAllByRole('button', { name: /submit score/i })[0]);
