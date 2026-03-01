@@ -1,8 +1,8 @@
 interface $$__sveltets_2_IsomorphicComponent<
-	Props extends Record<string, any> = any,
-	Events extends Record<string, any> = any,
-	Slots extends Record<string, any> = any,
-	Exports = {},
+	Props extends Record<string, unknown> = Record<string, unknown>,
+	Events extends Record<string, unknown> = Record<string, unknown>,
+	Slots extends Record<string, unknown> = Record<string, unknown>,
+	Exports = Record<string, never>,
 	Bindings = string
 > {
 	new (
@@ -17,18 +17,18 @@ interface $$__sveltets_2_IsomorphicComponent<
 			$$slots?: Slots;
 		}
 	): Exports & {
-		$set?: any;
-		$on?: any;
+		$set?: Record<string, unknown>;
+		$on?: Record<string, unknown>;
 	};
 	z_$$bindings?: Bindings;
 }
 declare const GameScreenshot: $$__sveltets_2_IsomorphicComponent<
 	Record<string, never>,
 	{
-		[evt: string]: CustomEvent<any>;
+		[evt: string]: CustomEvent<unknown>;
 	},
-	{},
-	{},
+	Record<string, never>,
+	Record<string, never>,
 	string
 >;
 type GameScreenshot = InstanceType<typeof GameScreenshot>;

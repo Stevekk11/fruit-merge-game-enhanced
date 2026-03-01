@@ -165,9 +165,9 @@ function handleStartClick() {
     gap: 0.5em;
     align-items: center;
     padding: 1em;
-    background: var(--color-background-light, #f9f9f9);
+    background: var(--color-background-light);
     border-radius: 8px;
-    border: 1px solid var(--color-border, #ccc);
+    border: 1px solid var(--color-border);
   }
 
   .global-submit .input-label {
@@ -185,14 +185,14 @@ function handleStartClick() {
     text-align: center;
     letter-spacing: 0.25em;
     border-radius: 8px;
-    border: 2px solid var(--color-border, #ccc);
-    background: var(--color-background-light, #fff);
-    color: var(--color-text, #333);
+    border: 2px solid var(--color-border);
+    background: var(--color-background-light);
+    color: var(--color-text);
     text-transform: uppercase;
   }
 
   .initials-input:focus {
-    outline: var(--color-focus-outline, rgb(2, 191, 96)) 2px solid;
+    outline: var(--color-focus-outline) 2px solid;
     border-color: transparent;
   }
 
