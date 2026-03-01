@@ -1,7 +1,7 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import { render, cleanup } from '@testing-library/svelte';
 import ModalCreditsFooter from '../ModalCreditsFooter.svelte';
-import { APP_VERSION } from '../../constants';
+import { APP_VERSION } from '../../buildInfo';
 
 afterEach(() => {
 	cleanup();

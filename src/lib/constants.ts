@@ -53,4 +53,3 @@ for (let i = 0; i < FRUIT_NAMES.length; i++) {
 
 export const DEFAULT_IMAGES_PATH = '/images';
 export const DEFAULT_SOUNDS_PATH = '/sounds';
-export const APP_VERSION = '2.0.4';
