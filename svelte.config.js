@@ -7,7 +7,10 @@ const config = {
 		adapter: adapter({
 			fallback: 'index.html',
 			strict: false
-		})
+		}),
+		paths: {
+			base: process.env.BASE_PATH ?? ''
+		}
 	},
 	compilerOptions: {
 		experimental: {

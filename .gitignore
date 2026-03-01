@@ -70,8 +70,7 @@ Thumbs.db
 .wrangler
 /.svelte-kit
 /build
-# /dist
-# Actually, include the dist folder so this can be installed via github
+/dist
 
 # OS
 .DS_Store
