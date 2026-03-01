@@ -78,12 +78,13 @@ describe('GameOverModal', () => {
 				fetchGlobalScores: vi.fn()
 			}
 		});
-		const { getAllByRole, getByPlaceholderText } = render(GameOverModal, {
+		const { getAllByRole, container } = render(GameOverModal, {
 			props: { open: true, score: 1500, onClose: vi.fn(), gameState }
 		});
 
-		await fireEvent.input(getByPlaceholderText(/enter name/i), {
-			target: { value: 'Player1' }
+		const input = container.querySelector('input') as HTMLInputElement;
+		await fireEvent.input(input, {
+			target: { value: 'TKP' }
 		});
 
 		const submitBtn = getAllByRole('button', { name: /submit score/i })[0];
@@ -106,12 +107,13 @@ describe('GameOverModal', () => {
 				fetchGlobalScores: vi.fn()
 			}
 		});
-		const { getAllByRole, getByPlaceholderText } = render(GameOverModal, {
+		const { getAllByRole, container } = render(GameOverModal, {
 			props: { open: true, score: 1500, onClose: vi.fn(), gameState }
 		});
 
-		await fireEvent.input(getByPlaceholderText(/enter name/i), {
-			target: { value: 'Player1' }
+		const input = container.querySelector('input') as HTMLInputElement;
+		await fireEvent.input(input, {
+			target: { value: 'TKP' }
 		});
 
 		await fireEvent.click(getAllByRole('button', { name: /submit score/i })[0]);
@@ -126,5 +128,54 @@ describe('GameOverModal', () => {
 			props: { open: false, score: 0, onClose: vi.fn(), gameState: null }
 		});
 		expect(container.querySelector('.score-value')).toBeNull();
+	});
+
+	it('initializes username from localStorage if available', async () => {
+		// Set localStorage before render
+		window.localStorage.setItem('subak_initials', 'ABC');
+
+		const gameState = makeGameState();
+		const { container } = render(GameOverModal, {
+			props: { open: true, score: 1500, onClose: vi.fn(), gameState }
+		});
+
+		await waitFor(() => {
+			const input = container.querySelector('input') as HTMLInputElement;
+			expect(input.value).toBe('ABC');
+		});
+	});
+
+	it('saves username to localStorage on successful submit', async () => {
+		// Clear local storage first
+		window.localStorage.removeItem('subak_initials');
+
+		const submitScore = vi.fn().mockResolvedValue({ success: true });
+		const gameState = makeGameState({
+			leaderboard: {
+				submissionStatus: 'idle',
+				sessionToken: 'mock-token',
+				submitScore,
+				globalScores: [],
+				globalScoresStatus: 'idle',
+				fetchGlobalScores: vi.fn()
+			}
+		});
+
+		const { getAllByRole, container } = render(GameOverModal, {
+			props: { open: true, score: 1500, onClose: vi.fn(), gameState }
+		});
+
+		const input = container.querySelector('input') as HTMLInputElement;
+		await fireEvent.input(input, {
+			target: { value: 'XYZ' }
+		});
+
+		const submitBtn = getAllByRole('button', { name: /submit score/i })[0];
+		await fireEvent.click(submitBtn);
+
+		await waitFor(() => {
+			expect(submitScore).toHaveBeenCalled();
+			expect(window.localStorage.getItem('subak_initials')).toBe('XYZ');
+		});
 	});
 });

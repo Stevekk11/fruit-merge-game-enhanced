@@ -14,7 +14,15 @@ interface GameOverModalProps {
 const { open, score, onClose, gameState }: GameOverModalProps = $props();
 
 let tab = $state<'local' | 'global'>('local');
-let username = $state('');
+let username = $state(
+	typeof window !== 'undefined' ? window.localStorage.getItem('subak_initials') || '' : ''
+);
+
+$effect(() => {
+	if (username) {
+		username = username.toUpperCase();
+	}
+});
 
 let leaderboardRef: ReturnType<typeof Leaderboard> | null = $state(null);
 
@@ -29,7 +37,8 @@ $effect(() => {
 
 async function handleGlobalSubmit(e: Event) {
 	e.preventDefault();
-	if (!username.trim() || isSubmitting) return;
+	const trimmedUsername = username.trim();
+	if ((trimmedUsername.length > 0 && trimmedUsername.length !== 3) || isSubmitting) return;
 
 	const token = gameState.leaderboard.sessionToken;
 	if (!token) {
@@ -37,12 +46,19 @@ async function handleGlobalSubmit(e: Event) {
 		return;
 	}
 
-	const payload = await gameState.telemetry.buildSubmissionPayload(username.trim(), score, token);
+	const payload = await gameState.telemetry.buildSubmissionPayload(
+		trimmedUsername || null,
+		score,
+		token
+	);
 	if (!payload) return;
 
 	const result = await gameState.leaderboard.submitScore(payload);
 
 	if (result.success) {
+		if (typeof window !== 'undefined') {
+			window.localStorage.setItem('subak_initials', username);
+		}
 		tab = 'global';
 	}
 }
@@ -69,15 +85,23 @@ function handleStartClick() {
 
         {#if score > 0 && submissionStatus !== "success"}
           <form class="global-submit" onsubmit={handleGlobalSubmit}>
+            <div class="input-label">
+              Enter 3 Initials for Global (Optional)
+            </div>
             <input
               type="text"
+              class="initials-input"
               bind:value={username}
-              placeholder="Enter name for global"
-              maxlength="20"
-              required
+              maxlength="3"
               disabled={isSubmitting}
+              autocomplete="off"
+              data-1p-ignore
             />
-            <button type="submit" disabled={isSubmitting || !username.trim()}>
+            <button
+              type="submit"
+              disabled={isSubmitting ||
+                (username.trim().length > 0 && username.trim().length !== 3)}
+            >
               {isSubmitting ? "Submitting..." : "Submit Score"}
             </button>
             {#if submissionStatus === "error"}
@@ -149,16 +173,35 @@ function handleStartClick() {
     gap: 0.5em;
     align-items: center;
     padding: 1em;
-    background: var(--color-background-light, #f9f9f9);
+    background: var(--color-background-light);
     border-radius: 8px;
-    border: 1px solid var(--color-border, #ccc);
+    border: 1px solid var(--color-border);
   }
 
-  .global-submit input {
-    padding: 0.5em;
-    border-radius: 4px;
-    border: 1px solid #ccc;
+  .global-submit .input-label {
+    font-size: 0.9em;
+    color: var(--color-text-muted, #666);
+    margin-bottom: 0.25em;
+  }
+
+  .initials-input {
+    width: 6rem;
+    padding: 0.25em;
+    font-size: 1.5em;
+    font-family: monospace;
+    font-variant-numeric: tabular-nums;
     text-align: center;
+    letter-spacing: 0.25em;
+    border-radius: 8px;
+    border: 2px solid var(--color-border);
+    background: var(--color-background-light);
+    color: var(--color-text);
+    text-transform: uppercase;
+  }
+
+  .initials-input:focus {
+    outline: var(--color-focus-outline) 2px solid;
+    border-color: transparent;
   }
 
   .error-msg {

@@ -99,8 +99,8 @@ const formatter = new Intl.DateTimeFormat('en-US', {
                 class:highlight={score.score === highlightScore}
               >
                 <td class="rank">{rank}</td>
-                {#if activeTab === "global" && score.username}
-                  <td class="username">{score.username}</td>
+                {#if activeTab === "global"}
+                  <td class="username">{score.username || "???"}</td>
                 {/if}
                 <td class="score">
                   <strong>{Intl.NumberFormat().format(score.score)}</strong>
