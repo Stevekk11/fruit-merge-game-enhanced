@@ -19,6 +19,9 @@ lib-cov
 coverage
 *.lcov
 
+# Vitest / Playwright failure screenshots
+__screenshots__/
+
 # Dependency directories
 node_modules/
 .pnp
