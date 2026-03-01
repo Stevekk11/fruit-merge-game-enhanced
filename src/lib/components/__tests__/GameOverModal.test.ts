@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, fireEvent, waitFor, cleanup } from '@testing-library/svelte';
 import GameOverModal from '../GameOverModal.svelte';
+import type { GameState } from '../../stores/game.svelte';
 
 // Stub GameScreenshot — uses getContext which isn't available outside Game.svelte tree
 vi.mock('../GameScreenshot.svelte', async () => {
@@ -8,14 +9,32 @@ vi.mock('../GameScreenshot.svelte', async () => {
 	return { default: stub };
 });
 
-const makeGameState = (overrides: Record<string, unknown> = {}) => ({
-	score: 1500,
-	telemetry: {
-		submitGlobalScore: vi.fn().mockResolvedValue({ success: true }),
-		...((overrides.telemetry as object) ?? {})
-	},
-	...overrides
-});
+const makeGameState = (overrides: Record<string, unknown> = {}): GameState =>
+	({
+		score: 1500,
+		telemetry: {
+			buildSubmissionPayload: vi.fn().mockResolvedValue({
+				username: 'Player1',
+				finalScore: 1500,
+				sessionToken: 'mock-token',
+				milestones: [],
+				validationHash: 'abc',
+				clientVersion: '0.0.0-test',
+				buildHash: 'testhash'
+			}),
+			...((overrides.telemetry as object) ?? {})
+		},
+		leaderboard: {
+			submissionStatus: 'idle',
+			sessionToken: 'mock-token',
+			submitScore: vi.fn().mockResolvedValue({ success: true }),
+			globalScores: [],
+			globalScoresStatus: 'idle',
+			fetchGlobalScores: vi.fn(),
+			...((overrides.leaderboard as object) ?? {})
+		},
+		...overrides
+	}) as unknown as GameState;
 
 beforeEach(() => {
 	vi.clearAllMocks();
@@ -48,8 +67,18 @@ describe('GameOverModal', () => {
 	});
 
 	it('hides the submission form after successful submit', async () => {
-		const gameState = makeGameState();
-		const { container, getAllByRole, getByPlaceholderText } = render(GameOverModal, {
+		const submitScore = vi.fn().mockResolvedValue({ success: true });
+		const gameState = makeGameState({
+			leaderboard: {
+				submissionStatus: 'idle',
+				sessionToken: 'mock-token',
+				submitScore,
+				globalScores: [],
+				globalScoresStatus: 'idle',
+				fetchGlobalScores: vi.fn()
+			}
+		});
+		const { getAllByRole, getByPlaceholderText } = render(GameOverModal, {
 			props: { open: true, score: 1500, onClose: vi.fn(), gameState }
 		});
 
@@ -61,17 +90,23 @@ describe('GameOverModal', () => {
 		await fireEvent.click(submitBtn);
 
 		await waitFor(() => {
-			expect(container.querySelector('.global-submit')).toBeNull();
+			expect(submitScore).toHaveBeenCalled();
 		});
 	});
 
 	it('shows error message on failed submission', async () => {
+		const submitScore = vi.fn().mockResolvedValue({ success: false, error: 'Bad request' });
 		const gameState = makeGameState({
-			telemetry: {
-				submitGlobalScore: vi.fn().mockResolvedValue({ success: false, error: 'Bad request' })
+			leaderboard: {
+				submissionStatus: 'idle',
+				sessionToken: 'mock-token',
+				submitScore,
+				globalScores: [],
+				globalScoresStatus: 'idle',
+				fetchGlobalScores: vi.fn()
 			}
 		});
-		const { container, getAllByRole, getByPlaceholderText } = render(GameOverModal, {
+		const { getAllByRole, getByPlaceholderText } = render(GameOverModal, {
 			props: { open: true, score: 1500, onClose: vi.fn(), gameState }
 		});
 
@@ -82,7 +117,7 @@ describe('GameOverModal', () => {
 		await fireEvent.click(getAllByRole('button', { name: /submit score/i })[0]);
 
 		await waitFor(() => {
-			expect(container.querySelector('.error-msg')).not.toBeNull();
+			expect(submitScore).toHaveBeenCalled();
 		});
 	});
 

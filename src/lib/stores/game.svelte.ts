@@ -12,6 +12,7 @@ import { AudioManager } from '../game/AudioManager.svelte';
 import { Boundary } from '../game/Boundary';
 import { Fruit } from '../game/Fruit';
 import { throttle } from '../utils/throttle';
+import { LeaderboardClient } from '../api/leaderboard-client.svelte';
 import { TelemetryState } from './telemetry.svelte';
 
 // --- Constants for Volume Mapping ---
@@ -70,8 +71,9 @@ export class GameState {
 	dropCount: number = $state(0);
 	mergeEffects: MergeEffectData[] = $state([]);
 
-	// Telemetry properties
+	// Telemetry & API
 	telemetry: TelemetryState = new TelemetryState();
+	leaderboard: LeaderboardClient = new LeaderboardClient();
 
 	mergeEffectIdCounter: number = 0;
 
@@ -102,8 +104,8 @@ export class GameState {
 		const { soundsPath } = this;
 		this.audioManager = new AudioManager({ soundsPath });
 		await this.initPhysics();
-		this.resetGame(); // resetGame will now set status to 'uninitialized'
-		this.telemetry.fetchSession(); // Ensures a session starts on game load
+		this.resetGame();
+		this.startNewSession();
 	}
 
 	update() {
@@ -438,6 +440,7 @@ export class GameState {
 		this.mergeEffectIdCounter = 0;
 		this.dropCount = 0;
 		this.telemetry.reset();
+		this.leaderboard.reset();
 
 		// Reset Svelte stores
 		this.setFruitsState([]);
@@ -449,9 +452,18 @@ export class GameState {
 	}
 
 	restartGame(): void {
-		this.resetGame(); // This will set status to 'uninitialized'
-		this.telemetry.fetchSession(); // Ensure a fresh token is grabbed
-		this.setStatus('playing'); // This will trigger the game loop via the modified setStatus
+		this.resetGame();
+		this.startNewSession();
+		this.setStatus('playing');
+	}
+
+	private startNewSession(): void {
+		this.leaderboard.startSession().then(() => {
+			const token = this.leaderboard.sessionToken;
+			if (token) {
+				this.telemetry.setSession(token);
+			}
+		});
 	}
 
 	getRandomFruitIndex(limit: number = 5) {

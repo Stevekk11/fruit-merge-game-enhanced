@@ -1,6 +1,11 @@
 import { render, fireEvent, waitFor, cleanup } from '@testing-library/svelte';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import Leaderboard from '../Leaderboard.svelte';
+import { LeaderboardClient } from '../../api/leaderboard-client.svelte';
+
+vi.mock('$env/dynamic/public', () => ({
+	env: { PUBLIC_LEADERBOARD_URL: 'http://localhost:3000' }
+}));
 
 const LOCAL_SCORES = [
 	{ id: 1, score: 1200, date: new Date('2024-01-01') },
@@ -61,12 +66,12 @@ describe('Leaderboard component', () => {
 		});
 	});
 
-	it('switches to global tab and fetches global scores', async () => {
+	it('switches to global tab and fetches global scores via LeaderboardClient', async () => {
+		const client = new LeaderboardClient();
 		const { getAllByRole, container } = render(Leaderboard, {
-			props: { localScores: LOCAL_SCORES }
+			props: { localScores: LOCAL_SCORES, leaderboardClient: client }
 		});
 
-		// Click the first "Global" tab button within this rendered instance
 		await fireEvent.click(getAllByRole('button', { name: /^global$/i })[0]);
 
 		await waitFor(() => {
@@ -81,8 +86,9 @@ describe('Leaderboard component', () => {
 	});
 
 	it('switches back to local tab after viewing global', async () => {
+		const client = new LeaderboardClient();
 		const { getAllByRole, container } = render(Leaderboard, {
-			props: { localScores: LOCAL_SCORES }
+			props: { localScores: LOCAL_SCORES, leaderboardClient: client }
 		});
 
 		await fireEvent.click(getAllByRole('button', { name: /^global$/i })[0]);
@@ -93,5 +99,22 @@ describe('Leaderboard component', () => {
 			const rows = container.querySelectorAll('tbody tr');
 			expect(rows.length).toBe(LOCAL_SCORES.length);
 		});
+	});
+
+	it('does not refetch global scores once already loaded', async () => {
+		const client = new LeaderboardClient();
+		const { getAllByRole } = render(Leaderboard, {
+			props: { localScores: LOCAL_SCORES, leaderboardClient: client }
+		});
+
+		await fireEvent.click(getAllByRole('button', { name: /^global$/i })[0]);
+		await waitFor(() => expect(mockFetch).toHaveBeenCalledTimes(1));
+
+		// Switch away and back
+		await fireEvent.click(getAllByRole('button', { name: /^local data$/i })[0]);
+		await fireEvent.click(getAllByRole('button', { name: /^global$/i })[0]);
+
+		// Should not have triggered another fetch
+		expect(mockFetch).toHaveBeenCalledTimes(1);
 	});
 });

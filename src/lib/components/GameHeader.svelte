@@ -30,48 +30,50 @@ function handleMuteClick() {
 </script>
 
 <header class="header">
-	<div class="leading">
-		<div class="app-title">
-			Subak Game <Fruit name="watermelon" radius="1em" />
-		</div>
-		<button onclick={handleIntroductionClick}>About</button>
-	</div>
-	<div class="trailing">
-		<button onclick={handleMuteClick} aria-label="Toggle Sound">
-			{#if gameState?.audioManager?.isMuted}
-				<SoundOff />
-			{:else}
-				<SoundOn />
-			{/if}
-		</button>
-	</div>
+  <div class="leading">
+    <div class="app-title">
+      Subak Game <Fruit name="watermelon" radius="1em" />
+    </div>
+    <button onclick={handleIntroductionClick}>About</button>
+  </div>
+  <div class="trailing">
+    <button onclick={handleMuteClick} aria-label="Toggle Sound">
+      {#if gameState?.audioManager?.isMuted}
+        <SoundOff />
+      {:else}
+        <SoundOn />
+      {/if}
+    </button>
+  </div>
 </header>
 
 <IntroductionModal
-	open={showIntroduction}
-	gameStatus={gameState?.status}
-	onClose={handleCloseIntroduction} />
+  open={showIntroduction}
+  gameStatus={gameState?.status}
+  onClose={handleCloseIntroduction}
+  leaderboardClient={gameState?.leaderboard}
+/>
 
 <style>
-	.app-title {
-		display: flex;
-		align-items: center;
-		gap: 0.5em;
-		font-weight: 550;
-	}
+  .app-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    font-weight: 550;
+  }
 
-	.header {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: 1em;
-		padding: 0.5em 1em;
-	}
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1em;
+    padding: 0.5em 1em;
+  }
 
-	.leading,
-	.trailing {
-		display: flex;
-		align-items: center;
-		gap: 0.5em;
-	}
+  .leading,
+  .trailing {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+  }
 </style>

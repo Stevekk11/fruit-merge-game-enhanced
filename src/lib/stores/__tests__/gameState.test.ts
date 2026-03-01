@@ -102,6 +102,7 @@ describe('GameState Methods', () => {
 		state.score = 100;
 		state.dropCount = 5;
 		state.telemetry = { reset: vi.fn() } as any;
+		state.leaderboard = { reset: vi.fn() } as any;
 
 		state.resetGame();
 
@@ -114,12 +115,17 @@ describe('GameState Methods', () => {
 	it('restarts game correctly', () => {
 		const state = new GameState({});
 		state.resetGame = vi.fn();
-		state.telemetry = { fetchSession: vi.fn() } as any;
+		state.telemetry = { reset: vi.fn(), setSession: vi.fn() } as any;
+		state.leaderboard = {
+			reset: vi.fn(),
+			startSession: vi.fn().mockResolvedValue(undefined),
+			sessionToken: 'mock-token'
+		} as any;
 
 		state.restartGame();
 
 		expect(state.resetGame).toHaveBeenCalled();
-		expect(state.telemetry.fetchSession).toHaveBeenCalled();
+		expect(state.leaderboard.startSession).toHaveBeenCalled();
 		expect(state.status).toBe('playing');
 	});
 

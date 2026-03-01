@@ -3,8 +3,14 @@ import Modal from './Modal.svelte';
 import Leaderboard from './Leaderboard.svelte';
 import Fruit from './Fruit.svelte';
 import ModalCreditsFooter from './ModalCreditsFooter.svelte';
+import type { LeaderboardClient } from '../api/leaderboard-client.svelte';
 
-const { open, gameStatus, onClose } = $props();
+const { open, gameStatus, onClose, leaderboardClient } = $props<{
+	open: boolean;
+	gameStatus: string;
+	onClose: () => void;
+	leaderboardClient?: LeaderboardClient;
+}>();
 
 function handleStartClick() {
 	onClose();
@@ -47,7 +53,7 @@ const startButtonText = $derived.by(() => {
     </header>
     <hr />
     <section class="leaderboard">
-      <Leaderboard />
+      <Leaderboard {leaderboardClient} />
     </section>
     <button onclick={handleStartClick}>{startButtonText}</button>
   </div>

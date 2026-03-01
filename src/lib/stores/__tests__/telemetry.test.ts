@@ -7,7 +7,6 @@ vi.mock('../../buildInfo', () => ({ APP_VERSION: '0.0.0-test', BUILD_HASH: 'test
 
 beforeEach(() => {
 	vi.clearAllMocks();
-	// Reset performance.now to a stable value
 	vi.spyOn(performance, 'now').mockReturnValue(1000);
 });
 
@@ -51,64 +50,51 @@ describe('TelemetryState', () => {
 		});
 	});
 
+	describe('setSession', () => {
+		it('sets sessionStartTime based on performance.now()', () => {
+			const state = new TelemetryState();
+			vi.spyOn(performance, 'now').mockReturnValue(12345);
+
+			state.setSession('some-token');
+
+			expect(state.sessionStartTime).toBe(12345);
+		});
+	});
+
 	describe('reset', () => {
-		it('clears milestones, sessionStartTime, and sessionToken', () => {
+		it('clears milestones and sessionStartTime', () => {
 			const state = new TelemetryState();
 			state.milestones = [{ timeOffsetMs: 100, scoreIncrement: 50, fruitIndex: 1, dropCount: 5 }];
 			state.sessionStartTime = 1234;
-			state.sessionToken = 'some-token';
 
 			state.reset();
 
 			expect(state.milestones).toHaveLength(0);
 			expect(state.sessionStartTime).toBeNull();
-			expect(state.sessionToken).toBeNull();
 		});
 	});
 
-	describe('submitGlobalScore', () => {
-		it('returns { success: false } when sessionToken is null', async () => {
+	describe('buildSubmissionPayload', () => {
+		it('returns null when milestones is empty', async () => {
 			const state = new TelemetryState();
-			state.sessionToken = null;
-			state.milestones = [{ timeOffsetMs: 100, scoreIncrement: 50, fruitIndex: 1, dropCount: 5 }];
-
-			const result = await state.submitGlobalScore('player1', 500);
-
-			expect(result.success).toBe(false);
+			const result = await state.buildSubmissionPayload('player1', 500, 'token');
+			expect(result).toBeNull();
 		});
 
-		it('returns { success: false } when milestones is empty', async () => {
+		it('builds a payload with correct fields and hash', async () => {
 			const state = new TelemetryState();
-			state.sessionToken = 'valid-token';
-			state.milestones = [];
-
-			const result = await state.submitGlobalScore('player1', 500);
-
-			expect(result.success).toBe(false);
-		});
-
-		it('calls fetch with payload when session data is valid', async () => {
-			const mockFetch = vi.fn().mockResolvedValue({
-				json: async () => ({ success: true })
-			});
-			vi.stubGlobal('fetch', mockFetch);
-
-			const state = new TelemetryState();
-			state.sessionToken = 'valid-token';
 			state.milestones = [{ timeOffsetMs: 100, scoreIncrement: 50, fruitIndex: 1, dropCount: 5 }];
 
-			const result = await state.submitGlobalScore('player1', 500);
+			const result = await state.buildSubmissionPayload('player1', 500, 'valid-token');
 
-			expect(mockFetch).toHaveBeenCalledTimes(1);
-			const [url, opts] = mockFetch.mock.calls[0];
-			expect(url).toContain('/api/leaderboard/submit');
-			const body = JSON.parse(opts.body);
-			expect(body.username).toBe('player1');
-			expect(body.finalScore).toBe(500);
-			expect(body.sessionToken).toBe('valid-token');
-			expect(result.success).toBe(true);
-
-			vi.unstubAllGlobals();
+			expect(result).not.toBeNull();
+			expect(result?.username).toBe('player1');
+			expect(result?.finalScore).toBe(500);
+			expect(result?.sessionToken).toBe('valid-token');
+			expect(result?.clientVersion).toBe('0.0.0-test');
+			expect(result?.buildHash).toBe('testhash');
+			expect(typeof result?.validationHash).toBe('string');
+			expect((result?.validationHash as string).length).toBe(64); // SHA-256 hex
 		});
 	});
 });
