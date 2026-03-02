@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, waitFor, cleanup } from '@testing-library/svelte';
+import { render, fireEvent, waitFor, cleanup } from '@testing-library/svelte';
 import GameOverModal from '../GameOverModal.svelte';
 import type { GameState } from '../../stores/game.svelte';
 
@@ -28,6 +28,7 @@ const makeGameState = (overrides: Record<string, unknown> = {}): GameState =>
 			submissionStatus: 'idle',
 			sessionToken: 'mock-token',
 			submitScore: vi.fn().mockResolvedValue({ success: true }),
+			submitPendingUsername: vi.fn().mockResolvedValue(undefined),
 			dailyScores: [],
 			dailyScoresStatus: 'idle',
 			overallScores: [],
@@ -154,6 +155,39 @@ describe('GameOverModal', () => {
 			props: { open: false, score: 0, onClose: vi.fn(), gameState: null }
 		});
 		expect(container.querySelector('.heading')).toBeNull();
+	});
+
+	it('calls submitPendingUsername on the leaderboard client when closed', async () => {
+		const submitPendingUsername = vi.fn().mockResolvedValue(undefined);
+		const onClose = vi.fn();
+		const gameState = makeGameState({
+			leaderboard: {
+				submissionStatus: 'success',
+				sessionToken: 'mock-token',
+				submitScore: vi.fn(),
+				submitPendingUsername,
+				dailyScores: [],
+				dailyScoresStatus: 'idle',
+				overallScores: [],
+				overallScoresStatus: 'idle',
+				fetchDailyScores: vi.fn(),
+				fetchOverallScores: vi.fn(),
+				editToken: 'edit-token',
+				submittedId: 1,
+				submittedRank: 1
+			}
+		});
+
+		const { getByText } = render(GameOverModal, {
+			props: { open: true, score: 1500, onClose, gameState }
+		});
+
+		await fireEvent.click(getByText('Start New Game'));
+
+		await waitFor(() => {
+			expect(submitPendingUsername).toHaveBeenCalled();
+			expect(onClose).toHaveBeenCalled();
+		});
 	});
 
 	it('uses stored initials from localStorage in auto-submit payload', async () => {

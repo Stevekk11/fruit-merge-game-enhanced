@@ -108,6 +108,70 @@ describe('Leaderboard component', () => {
 		});
 	});
 
+	describe('initials input', () => {
+		const makeClientWithSubmission = () => {
+			const client = new LeaderboardClient();
+			client.submittedId = 10;
+			client.editToken = 'edit-token';
+			client.dailyScores = [{ id: 10, score: 5000, date: new Date(), username: undefined }];
+			client.dailyScoresStatus = 'success';
+			return client;
+		};
+
+		it('shows the initials input for the submitted score row', async () => {
+			const client = makeClientWithSubmission();
+			const { container } = render(Leaderboard, {
+				props: { leaderboardClient: client, activeTab: 'daily' }
+			});
+
+			await waitFor(() => {
+				expect(container.querySelector('input.initials-input')).not.toBeNull();
+			});
+		});
+
+		it('updates leaderboardClient.pendingUsername as the user types', async () => {
+			const client = makeClientWithSubmission();
+			client.pendingUsername = '';
+			const { container } = render(Leaderboard, {
+				props: { leaderboardClient: client, activeTab: 'daily' }
+			});
+
+			await waitFor(() => expect(container.querySelector('input.initials-input')).not.toBeNull());
+
+			const input = container.querySelector('input.initials-input') as HTMLInputElement;
+			await fireEvent.input(input, { target: { value: 'abc' } });
+
+			expect(client.pendingUsername).toBe('ABC');
+		});
+
+		it('calls submitPendingUsername when Enter is pressed', async () => {
+			const client = makeClientWithSubmission();
+			client.submitPendingUsername = vi.fn().mockResolvedValue(undefined);
+			const { container } = render(Leaderboard, {
+				props: { leaderboardClient: client, activeTab: 'daily' }
+			});
+
+			await waitFor(() => expect(container.querySelector('input.initials-input')).not.toBeNull());
+
+			const input = container.querySelector('input.initials-input') as HTMLInputElement;
+			await fireEvent.keyDown(input, { key: 'Enter' });
+
+			expect(client.submitPendingUsername).toHaveBeenCalled();
+		});
+
+		it('hides the initials input once usernameSubmitted is true', async () => {
+			const client = makeClientWithSubmission();
+			client.usernameSubmitted = true;
+			const { container } = render(Leaderboard, {
+				props: { leaderboardClient: client, activeTab: 'daily' }
+			});
+
+			await waitFor(() => {
+				expect(container.querySelector('input.initials-input')).toBeNull();
+			});
+		});
+	});
+
 	it('does not refetch daily scores once already loaded', async () => {
 		const client = new LeaderboardClient();
 		const { getAllByRole } = render(Leaderboard, {

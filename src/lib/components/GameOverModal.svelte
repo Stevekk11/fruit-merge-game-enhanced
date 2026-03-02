@@ -32,8 +32,13 @@ async function autoSubmit() {
 	if (payload) await gameState.leaderboard.submitScore(payload);
 }
 
-function handleStartClick() {
+async function handleClose() {
+	await gameState.leaderboard.submitPendingUsername();
 	onClose();
+}
+
+function handleStartClick() {
+	handleClose();
 }
 </script>
 
@@ -41,7 +46,7 @@ function handleStartClick() {
   <ModalCreditsFooter />
 {/snippet}
 
-<Modal {open} {onClose} {append} title="Game Over">
+<Modal {open} onClose={handleClose} {append} title="Game Over">
   <div class="content">
     <h2 class="heading">Thanks for playing!</h2>
 

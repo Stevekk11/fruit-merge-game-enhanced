@@ -16,9 +16,6 @@ let {
 }: LeaderboardProps = $props();
 
 let internalLocalScores = $state<LeaderboardScore[]>(localScores);
-let usernameInput = $state(
-	typeof window !== 'undefined' ? window.localStorage.getItem('subak_initials') || '' : ''
-);
 
 export const fetchLocalScores = async () => {
 	try {
@@ -54,6 +51,11 @@ $effect(() => {
 
 	if (submittedId == null || !leaderboardEl || !scores || scores.length === 0) return;
 
+	// Ensure the daily tab is active before scrolling. Svelte will flush this
+	// reactive write as a microtask, which completes before requestAnimationFrame
+	// fires, so the daily tab content will be visible when we query the DOM.
+	activeTab = 'daily';
+
 	requestAnimationFrame(() => {
 		if (!leaderboardEl) return;
 		const row = leaderboardEl.querySelector(
@@ -63,20 +65,6 @@ $effect(() => {
 		(row?.querySelector('input') as HTMLInputElement | null)?.focus();
 	});
 });
-
-let initialsSubmitted = $state(false);
-
-async function handleUsernameSubmit() {
-	const trimmed = usernameInput.trim().toUpperCase();
-	if (trimmed.length !== 3 && trimmed.length !== 0) return;
-	if (!leaderboardClient) return;
-
-	await leaderboardClient.updateUsername(trimmed);
-	initialsSubmitted = true;
-	if (typeof window !== 'undefined') {
-		window.localStorage.setItem('subak_initials', trimmed);
-	}
-}
 
 const formatter = new Intl.DateTimeFormat('en-US', {
 	year: '2-digit',
@@ -107,20 +95,19 @@ const timeFormatter = new Intl.DateTimeFormat('en-US', {
             <tr data-id={score.id} class:highlight={isSubmitted}>
               <td class="rank">{rank}</td>
               <td class="username">
-                {#if isSubmitted && showInput && !initialsSubmitted}
+                {#if isSubmitted && showInput && !leaderboardClient?.usernameSubmitted}
                   <input
                     class="initials-input"
                     type="text"
-                    bind:value={usernameInput}
+                    bind:value={
+                      () => leaderboardClient?.pendingUsername ?? '',
+                      (v) => { if (leaderboardClient) leaderboardClient.pendingUsername = v.toUpperCase(); }
+                    }
                     maxlength="3"
                     autocomplete="off"
                     data-1p-ignore
                     onkeydown={(e) => {
-                      usernameInput = usernameInput.toUpperCase();
-                      if (e.key === "Enter") handleUsernameSubmit();
-                    }}
-                    oninput={() => {
-                      usernameInput = usernameInput.toUpperCase();
+                      if (e.key === 'Enter') leaderboardClient?.submitPendingUsername();
                     }}
                     placeholder="???"
                   />

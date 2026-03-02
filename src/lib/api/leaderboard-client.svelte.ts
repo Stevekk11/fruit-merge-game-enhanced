@@ -94,6 +94,23 @@ export class LeaderboardClient {
 	submittedId: number | null = $state(null);
 	submittedRank: number | null = $state(null);
 
+	// --- Pending Username ---
+	pendingUsername: string = $state(
+		typeof window !== 'undefined' ? window.localStorage.getItem('subak_initials') || '' : ''
+	);
+	usernameSubmitted: boolean = $state(false);
+
+	async submitPendingUsername(): Promise<void> {
+		if (this.usernameSubmitted || !this.submittedId) return;
+		const trimmed = this.pendingUsername.trim().toUpperCase();
+		if (trimmed.length !== 3 && trimmed.length !== 0) return;
+		await this.updateUsername(trimmed);
+		this.usernameSubmitted = true;
+		if (typeof window !== 'undefined') {
+			window.localStorage.setItem('subak_initials', trimmed);
+		}
+	}
+
 	async submitScore(
 		payload: Record<string, unknown>
 	): Promise<{ success: boolean; error?: string }> {
@@ -160,6 +177,9 @@ export class LeaderboardClient {
 		this.editToken = null;
 		this.submittedId = null;
 		this.submittedRank = null;
+		this.usernameSubmitted = false;
+		this.pendingUsername =
+			typeof window !== 'undefined' ? window.localStorage.getItem('subak_initials') || '' : '';
 		// Keep scores cached across games — they're still valid
 	}
 }
