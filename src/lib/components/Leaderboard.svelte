@@ -3,6 +3,7 @@ import { onMount } from 'svelte';
 import { getHighScores } from '../stores/db';
 import type { LeaderboardClient, LeaderboardScore } from '../api/leaderboard-client.svelte';
 import Tabs from './Tabs.svelte';
+import Progress from './Progress.svelte';
 
 interface LeaderboardProps {
 	leaderboardClient?: LeaderboardClient;
@@ -66,6 +67,51 @@ $effect(() => {
 	});
 });
 
+const pstTimeParts = new Intl.DateTimeFormat('en-US', {
+	hour: 'numeric',
+	minute: 'numeric',
+	second: 'numeric',
+	hour12: false,
+	timeZone: 'America/Los_Angeles'
+});
+
+const pstDateLabel = new Intl.DateTimeFormat('en-US', {
+	month: 'long',
+	day: 'numeric',
+	timeZone: 'America/Los_Angeles'
+});
+
+function getDayInfo(): {
+	elapsedPercent: number;
+	remainingLabel: string;
+	dateLabel: string;
+} {
+	const now = new Date();
+	const parts = pstTimeParts.formatToParts(now);
+	const hour = Number(parts.find((p) => p.type === 'hour')?.value ?? 0);
+	const minute = Number(parts.find((p) => p.type === 'minute')?.value ?? 0);
+	const second = Number(parts.find((p) => p.type === 'second')?.value ?? 0);
+	const elapsedSeconds = hour * 3600 + minute * 60 + second;
+	const totalSeconds = 86400;
+	const remainingSeconds = totalSeconds - elapsedSeconds;
+	const h = Math.floor(remainingSeconds / 3600);
+	const m = Math.floor((remainingSeconds % 3600) / 60);
+	return {
+		elapsedPercent: (elapsedSeconds / totalSeconds) * 100,
+		remainingLabel: `${h}h${String(m).padStart(2, '0')}m Remain`,
+		dateLabel: pstDateLabel.format(now)
+	};
+}
+
+let dayInfo = $state(getDayInfo());
+
+$effect(() => {
+	const interval = setInterval(() => {
+		dayInfo = getDayInfo();
+	}, 60_000);
+	return () => clearInterval(interval);
+});
+
 const formatter = new Intl.DateTimeFormat('en-US', {
 	year: '2-digit',
 	month: '2-digit',
@@ -100,14 +146,18 @@ const timeFormatter = new Intl.DateTimeFormat('en-US', {
                     class="initials-input"
                     type="text"
                     bind:value={
-                      () => leaderboardClient?.pendingUsername ?? '',
-                      (v) => { if (leaderboardClient) leaderboardClient.pendingUsername = v.toUpperCase(); }
+                      () => leaderboardClient?.pendingUsername ?? "",
+                      (v) => {
+                        if (leaderboardClient)
+                          leaderboardClient.pendingUsername = v.toUpperCase();
+                      }
                     }
                     maxlength="3"
                     autocomplete="off"
                     data-1p-ignore
                     onkeydown={(e) => {
-                      if (e.key === 'Enter') leaderboardClient?.submitPendingUsername();
+                      if (e.key === "Enter")
+                        leaderboardClient?.submitPendingUsername();
                     }}
                     placeholder="???"
                   />
@@ -159,14 +209,26 @@ const timeFormatter = new Intl.DateTimeFormat('en-US', {
 {/snippet}
 
 {#snippet dailyPanel()}
-  <div class="scores">
-    {#if leaderboardClient?.dailyScoresStatus === "loading"}
-      <div class="empty">Loading...</div>
-    {:else if leaderboardClient?.dailyScoresStatus === "error"}
-      <div class="empty">Failed to load scores.</div>
-    {:else}
-      {@render scoreTable(leaderboardClient?.dailyScores ?? [], true, "daily")}
-    {/if}
+  <div class="dailyScores">
+    <div class="scores">
+      {#if leaderboardClient?.dailyScoresStatus === "loading"}
+        <div class="empty">Loading...</div>
+      {:else if leaderboardClient?.dailyScoresStatus === "error"}
+        <div class="empty">Failed to load scores.</div>
+      {:else}
+        {@render scoreTable(
+          leaderboardClient?.dailyScores ?? [],
+          true,
+          "daily",
+        )}
+      {/if}
+    </div>
+    <Progress
+      value={dayInfo.elapsedPercent}
+      label={dayInfo.dateLabel}
+      labelRight={dayInfo.remainingLabel}
+      class="day-progress"
+    />
   </div>
 {/snippet}
 
@@ -190,9 +252,9 @@ const timeFormatter = new Intl.DateTimeFormat('en-US', {
   <Tabs
     bind:value={activeTab}
     tabs={[
-      { value: "daily", label: "Daily", content: dailyPanel },
-      { value: "overall", label: "Overall", content: overallPanel },
-      { value: "local", label: "Local", content: localScoresPanel },
+      { value: "daily", label: "🌎 Daily", content: dailyPanel },
+      { value: "overall", label: "🌎 Overall", content: overallPanel },
+      { value: "local", label: "💻 Local", content: localScoresPanel },
     ]}
   />
   <div class="time-disclaimer">(All times are USA/California based)</div>
@@ -217,6 +279,12 @@ const timeFormatter = new Intl.DateTimeFormat('en-US', {
     border: var(--color-border-light) 1px solid;
     border-radius: 10px;
     width: 100%;
+  }
+
+  .dailyScores {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5em;
   }
 
   .scoresScroll {

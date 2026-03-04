@@ -101,7 +101,7 @@ describe('Leaderboard component', () => {
 
 		await waitFor(() => expect(mockFetch).toHaveBeenCalled());
 
-		await fireEvent.click(getAllByRole('tab', { name: /^local$/i })[0]);
+		await fireEvent.click(getAllByRole('tab', { name: /local/i })[0]);
 		await waitFor(() => {
 			const rows = activeRows(container);
 			expect(rows.length).toBe(LOCAL_SCORES.length);
@@ -172,6 +172,105 @@ describe('Leaderboard component', () => {
 		});
 	});
 
+	describe('day progress bar', () => {
+		// 2026-03-04 15:00:00 PST = 23:00:00 UTC
+		// elapsedSeconds = 15*3600 = 54000 / 86400 = 62.5%
+		// remaining = 9h = 9h00m Remain
+		const FIXED_TIME = new Date('2026-03-04T23:00:00Z');
+
+		beforeEach(() => {
+			vi.useFakeTimers();
+			vi.setSystemTime(FIXED_TIME);
+		});
+
+		afterEach(() => {
+			vi.useRealTimers();
+		});
+
+		it('renders the progress meter in the daily tab', async () => {
+			const { container } = render(Leaderboard, {
+				props: { activeTab: 'daily' }
+			});
+
+			await waitFor(() => {
+				expect(container.querySelector('[role="meter"]')).not.toBeNull();
+			});
+		});
+
+		it('aria-valuenow reflects elapsed percentage', async () => {
+			const { container } = render(Leaderboard, {
+				props: { activeTab: 'daily' }
+			});
+
+			await waitFor(() => {
+				const meter = container.querySelector('[role="meter"]');
+				expect(meter).not.toBeNull();
+				// 15h elapsed of 24h = 62.5%
+				const valuenow = Number(meter?.getAttribute('aria-valuenow'));
+				expect(valuenow).toBeCloseTo(62.5, 0);
+			});
+		});
+
+		it('shows the PST date label', async () => {
+			const { getByText } = render(Leaderboard, {
+				props: { activeTab: 'daily' }
+			});
+
+			await waitFor(() => {
+				expect(getByText('March 4')).not.toBeNull();
+			});
+		});
+
+		it('shows the remaining time label', async () => {
+			const { getByText } = render(Leaderboard, {
+				props: { activeTab: 'daily' }
+			});
+
+			await waitFor(() => {
+				// 9h00m remaining
+				expect(getByText('9h00m Remain')).not.toBeNull();
+			});
+		});
+
+		it('shows PST date even when UTC date is different (cross-timezone)', async () => {
+			// 2026-03-05T02:00:00Z = March 4 at 6:00pm PST (UTC-8)
+			// UTC says March 5; PST says March 4
+			vi.setSystemTime(new Date('2026-03-05T02:00:00Z'));
+
+			const { getByText } = render(Leaderboard, {
+				props: { activeTab: 'daily' }
+			});
+
+			await waitFor(() => {
+				expect(getByText('March 4')).not.toBeNull();
+			});
+		});
+
+		it('remaining time is anchored to PST midnight, not UTC midnight', async () => {
+			// 2026-03-05T02:00:00Z = March 4 at 18:00:00 PST → 6h00m remain
+			vi.setSystemTime(new Date('2026-03-05T02:00:00Z'));
+
+			const { getByText } = render(Leaderboard, {
+				props: { activeTab: 'daily' }
+			});
+
+			await waitFor(() => {
+				expect(getByText('6h00m Remain')).not.toBeNull();
+			});
+		});
+
+		it('does not render the progress meter on other tabs', async () => {
+			const { container } = render(Leaderboard, {
+				props: { activeTab: 'local' }
+			});
+
+			await waitFor(() => {
+				const panel = activePanel(container);
+				expect(panel?.querySelector('[role="meter"]')).toBeNull();
+			});
+		});
+	});
+
 	it('does not refetch daily scores once already loaded', async () => {
 		const client = new LeaderboardClient();
 		const { getAllByRole } = render(Leaderboard, {
@@ -181,8 +280,8 @@ describe('Leaderboard component', () => {
 		await waitFor(() => expect(mockFetch).toHaveBeenCalledTimes(1));
 
 		// Switch away and back
-		await fireEvent.click(getAllByRole('tab', { name: /^local$/i })[0]);
-		await fireEvent.click(getAllByRole('tab', { name: /^daily$/i })[0]);
+		await fireEvent.click(getAllByRole('tab', { name: /local/i })[0]);
+		await fireEvent.click(getAllByRole('tab', { name: /daily/i })[0]);
 
 		// Should not have triggered another fetch
 		expect(mockFetch).toHaveBeenCalledTimes(1);
