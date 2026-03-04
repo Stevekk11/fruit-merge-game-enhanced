@@ -120,7 +120,7 @@ const formatter = new Intl.DateTimeFormat('en-US', {
 });
 
 const timeFormatter = new Intl.DateTimeFormat('en-US', {
-	hour: '2-digit',
+	hour: 'numeric',
 	minute: '2-digit',
 	timeZone: 'America/Los_Angeles'
 });
@@ -138,11 +138,16 @@ const timeFormatter = new Intl.DateTimeFormat('en-US', {
           {#each scores as score, index (score.id)}
             {@const rank = index + 1}
             {@const isSubmitted = leaderboardClient?.submittedId === score.id}
-            <tr data-id={score.id} class:highlight={isSubmitted}>
+            <tr
+              data-id={score.id}
+              class:highlight={isSubmitted}
+              class:gold={rank === 1}
+            >
               <td class="rank">{rank}</td>
               <td class="username">
                 {#if isSubmitted && showInput && !leaderboardClient?.usernameSubmitted}
-                  <input
+                  {#if rank === 1}🏆
+                  {/if}<input
                     class="initials-input"
                     type="text"
                     bind:value={
@@ -163,6 +168,7 @@ const timeFormatter = new Intl.DateTimeFormat('en-US', {
                   />
                 {:else}
                   {score.username || "???"}
+                  {#if rank === 1}🏆{/if}
                 {/if}
               </td>
               <td class="score">
@@ -191,8 +197,10 @@ const timeFormatter = new Intl.DateTimeFormat('en-US', {
           <tbody>
             {#each internalLocalScores as score, index (score.id)}
               {@const rank = index + 1}
-              <tr data-id={score.id}>
-                <td class="rank">{rank}</td>
+              <tr data-id={score.id} class:gold={rank === 1}>
+                <td class="rank"
+                  >{#if rank === 1}🏆{:else}{rank}{/if}</td
+                >
                 <td class="score">
                   <strong>{Intl.NumberFormat().format(score.score)}</strong>
                 </td>
@@ -303,9 +311,15 @@ const timeFormatter = new Intl.DateTimeFormat('en-US', {
     font-feature-settings: "ss01";
   }
 
+  .username {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-weight: bold;
+    letter-spacing: 0.1em;
+  }
+
   .createdAt {
     text-align: right;
-    font-size: 0.9em;
+    font-size: 0.8em;
   }
 
   .score {
@@ -323,15 +337,15 @@ const timeFormatter = new Intl.DateTimeFormat('en-US', {
 
   td {
     border-bottom: var(--color_light-border) 1px dotted;
-    padding: 0.4em 0.5em;
+    padding: 0.4em 0.2em;
   }
 
   td:first-child {
-    padding-left: 1em;
+    padding-left: 0.5em;
   }
 
   td:last-child {
-    padding-right: 1em;
+    padding-right: 0.75em;
   }
 
   tr:last-child td {
@@ -346,14 +360,39 @@ const timeFormatter = new Intl.DateTimeFormat('en-US', {
     background-color: rgba(68, 253, 115, 0.11);
   }
 
+  tr.gold {
+    background-color: oklch(0.76 0.175 62 / 0.25);
+    background-image: linear-gradient(
+      115deg,
+      oklch(0.85 0.152 82 / 0) 35%,
+      oklch(96.415% 0.02917 75.642) 50%,
+      oklch(0.85 0.152 82 / 0) 65%
+    );
+    background-size: 400px 100%;
+    background-repeat: no-repeat;
+    animation: gold-shimmer 5s ease-in-out infinite;
+  }
+
+  @keyframes gold-shimmer {
+    0%,
+    30% {
+      background-position: -400px center;
+    }
+    50%,
+    100% {
+      background-position: calc(100% + 400px) center;
+    }
+  }
+
   .initials-input {
-    width: 4em;
-    padding: 0.1em 0.2em;
-    font-size: 0.9em;
-    font-family: monospace;
-    font-variant-numeric: tabular-nums;
+    width: 3.25em;
+    margin-left: -0.5em;
+    padding: 0.2em 0;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-weight: bold;
+    font-size: 1em;
+    letter-spacing: 0.1em;
     text-align: center;
-    letter-spacing: 0.15em;
     border-radius: 4px;
     border: 1px solid var(--color-border);
     background: var(--color-background-light);

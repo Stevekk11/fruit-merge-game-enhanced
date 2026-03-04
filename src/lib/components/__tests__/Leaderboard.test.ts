@@ -58,7 +58,7 @@ describe('Leaderboard component', () => {
 			const rows = activeRows(container);
 			expect(rows.length).toBe(LOCAL_SCORES.length);
 			const firstRow = rows[0] as HTMLElement;
-			expect(firstRow.querySelector('.rank')?.textContent).toBe('1');
+			expect(firstRow.querySelector('.rank')?.textContent).toBe('🏆');
 			expect(firstRow.querySelector('.score')?.textContent).toContain('1,200');
 		});
 	});
