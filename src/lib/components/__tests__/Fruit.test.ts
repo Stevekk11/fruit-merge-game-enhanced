@@ -39,4 +39,20 @@ describe('Fruit', () => {
 		// Just the wrapper should be there, SVG might not render but shouldn't crash
 		expect(fruitDiv).not.toBeNull();
 	});
+
+	it('applies danger class when danger prop is true', () => {
+		const { container } = render(Fruit, {
+			props: { name: 'apple', radius: 1, danger: true }
+		});
+		const fruitDiv = container.querySelector('.fruit');
+		expect(fruitDiv?.classList.contains('danger')).toBe(true);
+	});
+
+	it('does not apply danger class by default', () => {
+		const { container } = render(Fruit, {
+			props: { name: 'apple', radius: 1 }
+		});
+		const fruitDiv = container.querySelector('.fruit');
+		expect(fruitDiv?.classList.contains('danger')).toBe(false);
+	});
 });

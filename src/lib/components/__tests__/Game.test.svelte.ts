@@ -31,6 +31,11 @@ vi.mock('modern-screenshot', () => ({
 	domToPng: vi.fn().mockResolvedValue('data:image/png;base64,stub')
 }));
 
+vi.mock('../../stores/db', () => ({
+	saveScore: vi.fn().mockResolvedValue(undefined),
+	getHighScores: vi.fn().mockResolvedValue([])
+}));
+
 import { render, fireEvent } from '@testing-library/svelte';
 import { tick } from 'svelte';
 import { describe, it, expect, beforeEach } from 'vitest';
@@ -54,8 +59,29 @@ function createMockGameState() {
 		fruitsState: [] as any[],
 		mergeEffects: [] as any[],
 		dropCount: 0,
+		gameOverFruitId: null as number | null,
 		audioManager: { isMuted: false, toggleMute: vi.fn() },
-		telemetry: { fetchSession: vi.fn(), submitGlobalScore: vi.fn(), reset: vi.fn() },
+		telemetry: {
+			fetchSession: vi.fn(),
+			submitGlobalScore: vi.fn(),
+			reset: vi.fn(),
+			buildSubmissionPayload: vi.fn().mockResolvedValue(null)
+		},
+		leaderboard: {
+			submissionStatus: 'idle',
+			sessionToken: null,
+			submitScore: vi.fn(),
+			submitPendingUsername: vi.fn().mockResolvedValue(undefined),
+			dailyScores: [],
+			dailyScoresStatus: 'idle',
+			overallScores: [],
+			overallScoresStatus: 'idle',
+			fetchDailyScores: vi.fn(),
+			fetchOverallScores: vi.fn(),
+			editToken: null,
+			submittedId: null,
+			submittedRank: null
+		},
 		// Methods
 		dropFruit: (index: number, x: number, y: number) => {
 			state.fruitsState.push({ id: Math.random(), x, y, rotation: 0, fruitIndex: index });
@@ -240,5 +266,76 @@ describe('Game component', () => {
 		expect(fruitNodes.length).toBe(2);
 		expect(fruitNodes[0].getAttribute('data-name')).toBe(MOCK_FRUITS[1].name);
 		expect(fruitNodes[1].getAttribute('data-name')).toBe(MOCK_FRUITS[2].name);
+	});
+
+	it('hides drop line and preview fruit when game is over', async () => {
+		const { container, getAllByRole } = render(Game);
+		await fireEvent.click(getAllByRole('button', { name: /start game/i })[0]);
+		await tick();
+
+		const mockState = instances[0];
+		mockState.status = 'playing';
+		await tick();
+
+		expect(container.querySelector('.drop-line')).not.toBeNull();
+		expect(container.querySelector('.preview-fruit')).not.toBeNull();
+
+		mockState.status = 'gameover';
+		await tick();
+
+		// The drop line fades out via a Svelte transition — while transitioning it remains
+		// in the DOM but is marked inert. Either state means it's no longer interactive.
+		const dropLine = container.querySelector('.drop-line');
+		expect(dropLine === null || dropLine.hasAttribute('inert')).toBe(true);
+		expect(container.querySelector('.preview-fruit')).toBeNull();
+	});
+
+	it('applies danger class only to the fruit matching gameOverFruitId', async () => {
+		const { container, getAllByRole } = render(Game);
+		await fireEvent.click(getAllByRole('button', { name: /start game/i })[0]);
+		await tick();
+
+		const mockState = instances[0];
+		const culpritId = 99;
+		mockState.gameOverFruitId = culpritId;
+		mockState.fruitsState = [
+			{ id: culpritId, x: 0.3, y: 0.1, rotation: 0, fruitIndex: 0 },
+			{ id: 100, x: 0.3, y: 0.2, rotation: 0, fruitIndex: 1 }
+		];
+		mockState.status = 'gameover';
+		await tick();
+
+		const fruitNodes = container.querySelectorAll('.gameplay-area .fruit');
+		expect(fruitNodes[0].classList.contains('danger')).toBe(true);
+		expect(fruitNodes[1].classList.contains('danger')).toBe(false);
+	});
+
+	it('delays game over modal by 1.5 seconds after gameover', async () => {
+		vi.useFakeTimers();
+		try {
+			const { container, getAllByRole } = render(Game);
+			// Close the intro modal so it doesn't interfere
+			await fireEvent.click(getAllByRole('button', { name: /start game/i })[0]);
+			await tick();
+
+			instances[0].status = 'gameover';
+			await tick();
+			await Promise.resolve(); // flush saveScore microtask
+
+			// "Thanks for playing!" is unique to the GameOverModal content
+			const gameOverContent = () => container.textContent?.includes('Thanks for playing!') ?? false;
+
+			expect(gameOverContent()).toBe(false);
+
+			vi.advanceTimersByTime(1499);
+			await tick();
+			expect(gameOverContent()).toBe(false);
+
+			vi.advanceTimersByTime(1);
+			await tick();
+			expect(gameOverContent()).toBe(true);
+		} finally {
+			vi.useRealTimers();
+		}
 	});
 });

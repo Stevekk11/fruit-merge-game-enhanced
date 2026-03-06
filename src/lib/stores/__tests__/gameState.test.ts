@@ -95,6 +95,31 @@ describe('GameState Methods', () => {
 		expect(state.status).toBe('gameover');
 	});
 
+	it('records the culprit fruit id in gameOverFruitId when game ends', () => {
+		const state = new GameState({});
+		state.physicsWorld = {} as any;
+		state.setStatus('playing');
+
+		const fruit: any = state.addFruit(0, 0, 0);
+		fruit.id = 42;
+		fruit.isOutOfBounds.mockReturnValue(true);
+
+		state.checkGameOver();
+		expect(state.gameOverFruitId).toBe(42);
+	});
+
+	it('does not set gameOverFruitId when no fruit is out of bounds', () => {
+		const state = new GameState({});
+		state.physicsWorld = {} as any;
+		state.setStatus('playing');
+
+		state.addFruit(0, 0.1, 0.1);
+
+		state.checkGameOver();
+		expect(state.gameOverFruitId).toBeNull();
+		expect(state.status).toBe('playing');
+	});
+
 	it('resets game state correctly', () => {
 		const state = new GameState({});
 		state.physicsWorld = {} as any;
@@ -110,6 +135,19 @@ describe('GameState Methods', () => {
 		expect(state.score).toBe(0);
 		expect(state.dropCount).toBe(0);
 		expect(state.status).toBe('uninitialized');
+	});
+
+	it('clears gameOverFruitId on resetGame', () => {
+		const state = new GameState({});
+		state.physicsWorld = {} as any;
+		(state as any).gameOverFruitId = 42;
+		state.fruits = [{ destroy: vi.fn() }] as any;
+		state.telemetry = { reset: vi.fn() } as any;
+		state.leaderboard = { reset: vi.fn() } as any;
+
+		state.resetGame();
+
+		expect(state.gameOverFruitId).toBeNull();
 	});
 
 	it('restarts game correctly', () => {

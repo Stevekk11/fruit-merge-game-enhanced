@@ -1,15 +1,15 @@
 <script lang="ts">
-  import { browser } from "$app/environment";
-  import TKIcon from "../lib/icons/tk.svelte";
-  import Game from "../lib/components/Game.svelte";
+import { browser } from '$app/environment';
+import TKIcon from '../lib/icons/tk.svelte';
+import Game from '../lib/components/Game.svelte';
 
-  if (browser) {
-    (async () => {
-      const { initializeWebAnalytics } = await import("../utils/web-analytics");
-      const token = import.meta.env.VITE_POSTHOG_TOKEN as string;
-      initializeWebAnalytics(token);
-    })();
-  }
+if (browser) {
+	(async () => {
+		const { initializeWebAnalytics } = await import('../utils/web-analytics');
+		const token = import.meta.env.VITE_POSTHOG_TOKEN as string;
+		initializeWebAnalytics(token);
+	})();
+}
 </script>
 
 <main>

@@ -75,6 +75,8 @@ export class GameState {
 	telemetry: TelemetryState = new TelemetryState();
 	leaderboard: LeaderboardClient = new LeaderboardClient();
 
+	gameOverFruitId: number | null = $state(null);
+
 	mergeEffectIdCounter: number = 0;
 
 	physicsAccumulator: number = 0;
@@ -420,6 +422,7 @@ export class GameState {
 
 		for (const fruit of this.fruits) {
 			if (fruit.isOutOfBounds()) {
+				this.gameOverFruitId = fruit.id;
 				this.setStatus('gameover');
 				break;
 			}
@@ -441,6 +444,8 @@ export class GameState {
 		this.dropCount = 0;
 		this.telemetry.reset();
 		this.leaderboard.reset();
+
+		this.gameOverFruitId = null;
 
 		// Reset Svelte stores
 		this.setFruitsState([]);

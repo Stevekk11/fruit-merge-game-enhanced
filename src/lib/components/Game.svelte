@@ -1,6 +1,6 @@
 <script lang="ts">
 import { onMount, setContext } from 'svelte';
-import { scale } from 'svelte/transition';
+import { fade, scale } from 'svelte/transition';
 import { expoOut } from 'svelte/easing';
 
 // Import Stores and Types
@@ -93,8 +93,9 @@ let clampedMouseX: number = $derived.by(() => {
 });
 
 let isDropping = $state(false);
+let showGameOverModal = $state(false);
 
-// Save score and load leaderboard when game is over
+// Save score and show modal after a delay when game is over
 $effect(() => {
 	(async () => {
 		if (gameState?.status === 'gameover') {
@@ -103,6 +104,11 @@ $effect(() => {
 			} else {
 				console.error('Attempted to save invalid score:', gameState.score);
 			}
+			setTimeout(() => {
+				showGameOverModal = true;
+			}, 1500);
+		} else {
+			showGameOverModal = false;
 		}
 	})();
 });
@@ -189,7 +195,9 @@ setContext('generateScreenshot', generateScreenshot);
       <div class="restricted-area"></div>
 
       {#if gameState}
-        <div class="drop-line" style:translate="{clampedMouseX - 1}px 0"></div>
+        {#if gameState.status !== "gameover"}
+          <div class="drop-line" style:translate="{clampedMouseX - 1}px 0" out:fade={{ duration: 200 }}></div>
+        {/if}
 
         <!-- Merge effects - Use effect.id as the key -->
         {#each gameState.mergeEffects as effect (effect.id)}
@@ -232,7 +240,7 @@ setContext('generateScreenshot', generateScreenshot);
             rotation={fruitState.rotation}
             scale={gameScale}
           >
-            <Fruit {...fruit} radius={fruit.radius} scale={gameScale} />
+            <Fruit {...fruit} radius={fruit.radius} scale={gameScale} danger={fruitState.id === gameState.gameOverFruitId} />
           </GameEntity>
         {/each}
       {/if}
@@ -241,7 +249,7 @@ setContext('generateScreenshot', generateScreenshot);
     {#if gameState}
       <GameOverModal
         {gameState}
-        open={gameState.status === "gameover"}
+        open={showGameOverModal}
         score={gameState.score}
         onClose={handleGameOverClose}
       />

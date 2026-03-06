@@ -37,9 +37,10 @@ interface FruitProps {
 	name: string;
 	display?: 'block' | 'inline';
 	scale?: number;
+	danger?: boolean;
 }
 
-let { radius, name, display = 'block', scale = 1 }: FruitProps = $props();
+let { radius, name, display = 'block', scale = 1, danger = false }: FruitProps = $props();
 
 const width = $derived.by(() => {
 	const scaledGameWidthPx = GAME_WIDTH_PX * scale;
@@ -57,16 +58,26 @@ const FruitComponent = $derived.by(() => {
 </script>
 
 <div
-	data-name={name}
-	class="fruit"
-	style:width
-	style:display={display === 'inline' ? 'inline-block' : display}>
-	{#if FruitComponent}<FruitComponent style="display: block" {name} />{/if}
+  data-name={name}
+  class="fruit"
+  class:danger
+  style:width
+  style:display={display === "inline" ? "inline-block" : display}
+>
+  {#if FruitComponent}<FruitComponent style="display: block" {name} />{/if}
 </div>
 
 <style>
-	.fruit {
-		aspect-ratio: 1 / 1;
-		user-select: none;
-	}
+  .fruit {
+    aspect-ratio: 1 / 1;
+    user-select: none;
+    outline: 3px solid transparent;
+    outline-offset: 10px;
+    transition: outline-color 150ms ease-in;
+  }
+
+  .fruit.danger {
+    border-radius: 50%;
+    outline: 3px solid hotpink;
+  }
 </style>
