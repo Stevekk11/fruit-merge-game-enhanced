@@ -42,7 +42,9 @@ export function useCursorPosition() {
 		};
 
 		// Use modern Pointer Events for unified mouse, touch, and pen input.
+		// Also listen to pointerdown so a tap (no drag) still updates the position.
 		node.addEventListener('pointermove', handlePointerMove);
+		node.addEventListener('pointerdown', handlePointerMove);
 
 		// The action's destroy method ensures all listeners are cleaned up.
 		return {
@@ -51,6 +53,7 @@ export function useCursorPosition() {
 			},
 			destroy() {
 				node.removeEventListener('pointermove', handlePointerMove);
+				node.removeEventListener('pointerdown', handlePointerMove);
 			}
 		};
 	};
