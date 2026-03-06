@@ -51,7 +51,10 @@ function handleStartClick() {
     <h2 class="heading">Thanks for playing!</h2>
 
     <div class="score-and-screen">
-      <Leaderboard bind:activeTab={tab} leaderboardClient={gameState.leaderboard} />
+      <Leaderboard
+        bind:activeTab={tab}
+        leaderboardClient={gameState.leaderboard}
+      />
       <div class="screenshot"><GameScreenshot /></div>
     </div>
 
@@ -82,6 +85,10 @@ function handleStartClick() {
     align-items: center;
     justify-items: center;
     gap: 1em;
+    width: 100%;
+  }
+
+  .screenshot {
     width: 100%;
   }
 </style>

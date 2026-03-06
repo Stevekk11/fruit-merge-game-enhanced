@@ -1,5 +1,6 @@
 <script lang="ts">
 import { onMount, getContext } from 'svelte';
+import { fade } from 'svelte/transition';
 
 let screenshotDataUrl = $state<string | null>(null);
 let isLoading = $state(true); // Added state for loading indicator
@@ -23,7 +24,7 @@ onMount(async () => {
 	{#if isLoading}
 		<div class="loading-indicator">Loading screenshot...</div>
 	{:else if screenshotDataUrl}
-		<img class="image" src={screenshotDataUrl} alt="Gameplay Screenshot" />
+		<img class="image" in:fade src={screenshotDataUrl} alt="Gameplay Screenshot" />
 	{:else if errorMessage}
 		<div class="error-message">
 			<p>{errorMessage}</p>
@@ -33,17 +34,23 @@ onMount(async () => {
 
 <style>
 	.screenshot {
+		position: relative;
 		width: 100%;
 		aspect-ratio: 2 / 3;
 		border-radius: 0.5em;
 		overflow: hidden;
 		background-color: var(--color-background);
+		display: flex;
+		align-items: center;
+		justify-content: center;
 	}
 
 	.image {
-		display: block;
-		max-width: 100%;
-		object-fit: cover; /* To maintain aspect ratio and fill */
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
 	}
 
 	.loading-indicator,

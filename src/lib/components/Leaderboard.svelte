@@ -287,6 +287,7 @@ const timeFormatter = new Intl.DateTimeFormat('en-US', {
     border: var(--color-border-light) 1px solid;
     border-radius: 10px;
     width: 100%;
+    min-height: 5em;
   }
 
   .dailyScores {
