@@ -74,7 +74,16 @@ onMount(() => {
 	// Only initialize physics and audio on client
 	gameState.init();
 
+	function handleBeforeUnload(event: BeforeUnloadEvent) {
+		if (gameState?.status === 'playing') {
+			event.preventDefault();
+		}
+	}
+
+	window.addEventListener('beforeunload', handleBeforeUnload);
+
 	return function onUnmount() {
+		window.removeEventListener('beforeunload', handleBeforeUnload);
 		gameState.destroy();
 	};
 });
