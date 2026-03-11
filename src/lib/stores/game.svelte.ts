@@ -23,6 +23,9 @@ const MAX_COLLISION_VOLUME = 1.0; // Maximum volume for the loudest sound
 // --- Pitch variation settings ---
 const PITCH_VARIATION_MIN = 0.9;
 const PITCH_VARIATION_MAX = 1.1;
+// Drop pitch rates: C major scale ~1.5 octaves (E4→B2), smallest fruit = highest pitch.
+// Notes: E4, D4, C4, B3, A3, G3, F3, E3, D3, C3, B2. Each rate = 2^(semitones/12).
+const DROP_PITCH_RATES = [1.2599, 1.1225, 1.0, 0.9439, 0.8409, 0.7492, 0.6674, 0.6300, 0.5612, 0.5, 0.4729];
 
 // Helper function (as defined above)
 function mapRange(
@@ -227,7 +230,8 @@ export class GameState {
 					collisionItemB instanceof Fruit &&
 					collisionItemA.fruitIndex === collisionItemB.fruitIndex
 				) {
-					this.audioManager.playSound('pop', { volume: 1, rate });
+					const popRate = DROP_PITCH_RATES[collisionItemA.fruitIndex] ?? 1.0;
+					this.audioManager.playSound('pop', { volume: 1, rate: popRate });
 					// bump sounds have complex logic
 				} else {
 					// Get velocities (use {x:0, y:0} for static bodies or null bodies)
@@ -252,9 +256,22 @@ export class GameState {
 							MAX_COLLISION_VOLUME
 						);
 
+						// Pitch based on the largest fruit involved in the collision
+						const fruitA = collisionItemA instanceof Fruit ? collisionItemA : null;
+						const fruitB = collisionItemB instanceof Fruit ? collisionItemB : null;
+						const dominantFruit =
+							fruitA && fruitB
+								? fruitA.fruitIndex >= fruitB.fruitIndex
+									? fruitA
+									: fruitB
+								: (fruitA ?? fruitB);
+						const bumpRate = dominantFruit
+							? (DROP_PITCH_RATES[dominantFruit.fruitIndex] ?? 1.0)
+							: rate;
+
 						// Play the sound using AudioManager
 
-						this.audioManager.playSound('bump', { volume, rate });
+						this.audioManager.playSound('bump', { volume, rate: bumpRate });
 
 						// Update the last play time
 						this.lastBumpSoundTime = currentTime;
