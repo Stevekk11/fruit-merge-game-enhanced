@@ -1,19 +1,12 @@
-import type { EventQueue, World } from '@dimforge/rapier2d-compat';
+import type {EventQueue, World} from '@dimforge/rapier2d-compat';
 
-import {
-	DEFAULT_IMAGES_PATH,
-	DEFAULT_SOUNDS_PATH,
-	FRUITS, // Assuming FRUITS is typed like: { radius: number; points: number }[]
-	GAME_HEIGHT,
-	GAME_WIDTH,
-	WALL_THICKNESS
-} from '../constants'; // Ensure constants are correctly typed in their file
-import { AudioManager } from '../game/AudioManager.svelte';
-import { Boundary } from '../game/Boundary';
-import { Fruit } from '../game/Fruit';
-import { throttle } from '../utils/throttle';
-import { LeaderboardClient } from '../api/leaderboard-client.svelte';
-import { TelemetryState } from './telemetry.svelte';
+import {DEFAULT_IMAGES_PATH, DEFAULT_SOUNDS_PATH, FRUITS, GAME_HEIGHT, GAME_WIDTH, WALL_THICKNESS} from '../constants'; // Ensure constants are correctly typed in their file
+import {AudioManager} from '../game/AudioManager.svelte';
+import {Boundary} from '../game/Boundary';
+import {Fruit} from '../game/Fruit';
+import {throttle} from '../utils/throttle';
+import {LeaderboardClient} from '../api/leaderboard-client.svelte';
+import {TelemetryState} from './telemetry.svelte';
 
 // --- Constants for Volume Mapping ---
 const MIN_VELOCITY_FOR_SOUND = 0.2; // Ignore very gentle taps
@@ -48,6 +41,16 @@ interface MergeEffectData {
 	startTime: number;
 	duration: number;
 }
+
+interface ScoreTextData {
+	id: number;
+	x: number;
+	y: number;
+	score: number;
+	comboCount: number;
+	startTime: number;
+	duration: number;
+}
 interface FruitState {
 	id: number; // Add this line
 	x: number;
@@ -73,6 +76,7 @@ export class GameState {
 	fruitsState: FruitState[] = $state([]);
 	dropCount: number = $state(0);
 	mergeEffects: MergeEffectData[] = $state([]);
+	scoreTexts: ScoreTextData[] = $state([]);
 
 	// Telemetry & API
 	telemetry: TelemetryState = new TelemetryState();
@@ -81,6 +85,9 @@ export class GameState {
 	gameOverFruitId: number | null = $state(null);
 
 	mergeEffectIdCounter: number = 0;
+	scoreTextIdCounter: number = 0;
+	lastMergeTime: number = 0;
+	currentComboCount: number = 0;
 
 	physicsAccumulator: number = 0;
 	lastTime: number | null = null;
@@ -198,6 +205,16 @@ export class GameState {
 			})
 			.filter((effect): effect is MergeEffectData => effect !== null);
 		this.setMergeEffects(newMergeEffects);
+
+		const newScoreTexts = this.scoreTexts
+			.map((text: ScoreTextData) => {
+				const progress = (currentTime - text.startTime) / text.duration;
+
+				if (progress >= 1) return null;
+				return text;
+			})
+			.filter((text): text is ScoreTextData => text !== null);
+		this.setScoreTexts(newScoreTexts);
 	}
 
 	checkCollisions() {
@@ -405,6 +422,36 @@ export class GameState {
 
 		// Update the score
 		this.setScore(this.score + points);
+
+		// --- Combo Tracking & Score Text ---
+		const currentTime = performance.now();
+		const timeSinceLastMerge = currentTime - this.lastMergeTime;
+		const COMBO_WINDOW = 1000; // 1 second window for combo
+
+		if (timeSinceLastMerge > COMBO_WINDOW) {
+			// Combo expired, reset
+			this.currentComboCount = 1;
+		} else {
+			// Still in combo window, increment
+			this.currentComboCount++;
+		}
+
+		this.lastMergeTime = currentTime;
+
+		// Add score text display
+		const newScoreTexts = [
+			...this.scoreTexts,
+			{
+				id: this.scoreTextIdCounter++,
+				x: midpoint.x,
+				y: midpoint.y,
+				score: points,
+				comboCount: this.currentComboCount,
+				startTime: currentTime,
+				duration: 1500
+			}
+		];
+		this.setScoreTexts(newScoreTexts);
 	}
 
 	addFruit(fruitIndex: number, x: number, y: number): Fruit | undefined {
@@ -458,7 +505,10 @@ export class GameState {
 		this.fruits = [];
 		this.lastTime = null;
 		this.mergeEffectIdCounter = 0;
+		this.scoreTextIdCounter = 0;
 		this.dropCount = 0;
+		this.lastMergeTime = 0;
+		this.currentComboCount = 0;
 		this.telemetry.reset();
 		this.leaderboard.reset();
 
@@ -467,6 +517,7 @@ export class GameState {
 		// Reset Svelte stores
 		this.setFruitsState([]);
 		this.setMergeEffects([]);
+		this.setScoreTexts([]);
 		this.setScore(0);
 		this.setStatus('uninitialized'); // Set to uninitialized, GameHeader will transition to playing
 		this.setCurrentFruitIndex(this.getRandomFruitIndex());
@@ -534,6 +585,10 @@ export class GameState {
 
 	setMergeEffects(newMergeEffects: MergeEffectData[]) {
 		this.mergeEffects = newMergeEffects;
+	}
+
+	setScoreTexts(newScoreTexts: ScoreTextData[]) {
+		this.scoreTexts = newScoreTexts;
 	}
 
 	destroy() {

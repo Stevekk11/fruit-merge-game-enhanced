@@ -1,37 +1,39 @@
 <script lang="ts">
-import { onMount, setContext } from 'svelte';
-import { fade, scale } from 'svelte/transition';
-import { expoOut } from 'svelte/easing';
+  import {onMount, setContext} from 'svelte';
+  import {fade, scale} from 'svelte/transition';
+  import {expoOut} from 'svelte/easing';
 
-// Import Stores and Types
-import { GameState } from '../stores/game.svelte.js';
-import { saveScore } from '../stores/db';
+  // Import Stores and Types
+  import {GameState} from '../stores/game.svelte.js';
+  import {saveScore} from '../stores/db';
 
-// Import Utilities
-import { clamp } from '../utils/clamp';
-import { useCursorPosition } from '../hooks/useCursorPosition.svelte';
-import { useBoundingRect } from '../hooks/useBoundingRect.svelte';
+  // Import Utilities
+  import {clamp} from '../utils/clamp';
+  import {useCursorPosition} from '../hooks/useCursorPosition.svelte';
+  import {useBoundingRect} from '../hooks/useBoundingRect.svelte';
 
-// Import Components
-import Fruit from './Fruit.svelte';
-import MergeEffect from './MergeEffect.svelte';
-import GameEntity from './GameEntity.svelte';
-import GameSidebar from './GameSidebar.svelte';
-import GameHeader from './GameHeader.svelte';
-import GameOverModal from './GameOverModal.svelte';
-import DebugMenu from '../components/DebugMenu.svelte';
+  // Import Components
+  import Fruit from './Fruit.svelte';
+  import MergeEffect from './MergeEffect.svelte';
+  import ScoreText from './ScoreText.svelte';
+  import GameEntity from './GameEntity.svelte';
+  import GameSidebar from './GameSidebar.svelte';
+  import GameHeader from './GameHeader.svelte';
+  import GameOverModal from './GameOverModal.svelte';
+  import DebugMenu from '../components/DebugMenu.svelte';
 
-// Import Constants and Types
-import {
-	GAME_WIDTH,
-	GAME_WIDTH_PX,
-	GAME_OVER_HEIGHT,
-	FRUITS,
-	DEFAULT_IMAGES_PATH,
-	DEFAULT_SOUNDS_PATH
-} from '../constants';
+  // Import Constants and Types
+  import {
+    DEFAULT_IMAGES_PATH,
+    DEFAULT_SOUNDS_PATH,
+    FRUITS,
+    GAME_OVER_HEIGHT,
+    GAME_WIDTH,
+    GAME_WIDTH_PX
+  } from '../constants';
 
-const { imagesPath = DEFAULT_IMAGES_PATH, soundsPath = DEFAULT_SOUNDS_PATH } = $props();
+
+  const { imagesPath = DEFAULT_IMAGES_PATH, soundsPath = DEFAULT_SOUNDS_PATH } = $props();
 
 // Game state reference
 let gameState = $state<GameState | null>(
@@ -212,6 +214,13 @@ setContext('generateScreenshot', generateScreenshot);
         {#each gameState.mergeEffects as effect (effect.id)}
           <GameEntity x={effect.x} y={effect.y} scale={gameScale}>
             <MergeEffect {...effect} radius={effect.radius * gameScale} />
+          </GameEntity>
+        {/each}
+
+        <!-- Score text display - floating text for merge scores -->
+        {#each gameState.scoreTexts as text (text.id)}
+          <GameEntity x={text.x} y={text.y} scale={gameScale}>
+            <ScoreText {...text} scale={gameScale}/>
           </GameEntity>
         {/each}
 
