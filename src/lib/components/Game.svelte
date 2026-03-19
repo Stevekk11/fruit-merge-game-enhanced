@@ -14,6 +14,7 @@
 
   // Import Components
   import Fruit from './Fruit.svelte';
+  import Bomb from './Bomb.svelte';
   import MergeEffect from './MergeEffect.svelte';
   import ScoreText from './ScoreText.svelte';
   import GameEntity from './GameEntity.svelte';
@@ -223,6 +224,13 @@ setContext('generateScreenshot', generateScreenshot);
         {#each gameState.scoreTexts as text (text.id)}
           <GameEntity x={text.x} y={text.y} scale={gameScale}>
             <ScoreText {...text} scale={gameScale}/>
+          </GameEntity>
+        {/each}
+
+        <!-- Bombs - rendered above fruits -->
+        {#each gameState.bombsState as bomb (bomb.id)}
+          <GameEntity x={bomb.x} y={bomb.y} scale={gameScale}>
+            <Bomb radius={bomb.radius} scale={gameScale}/>
           </GameEntity>
         {/each}
 

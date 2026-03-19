@@ -4,6 +4,7 @@ import {DEFAULT_IMAGES_PATH, DEFAULT_SOUNDS_PATH, FRUITS, GAME_HEIGHT, GAME_WIDT
 import {AudioManager} from '../game/AudioManager.svelte';
 import {Boundary} from '../game/Boundary';
 import {Fruit} from '../game/Fruit';
+import {Bomb} from '../game/Bomb';
 import {throttle} from '../utils/throttle';
 import {LeaderboardClient} from '../api/leaderboard-client.svelte';
 import {TelemetryState} from './telemetry.svelte';
@@ -77,10 +78,13 @@ export class GameState {
 	dropCount: number = $state(0);
 	mergeEffects: MergeEffectData[] = $state([]);
 	scoreTexts: ScoreTextData[] = $state([]);
+	bombs: Bomb[] = [];
+	bombsState: Array<{ id: number; x: number; y: number; radius: number }> = $state([]);
 
 	// Abilities
 	shakesRemaining: number = $state(3);
 	isShaking: boolean = $state(false);
+	bombsRemaining: number = $state(2);
 
 	// Telemetry & API
 	telemetry: TelemetryState = new TelemetryState();
@@ -99,7 +103,7 @@ export class GameState {
 
 	physicsWorld: World | null = null;
 	eventQueue: EventQueue | null = null;
-	colliderMap: Map<number, Fruit | Boundary> = new Map();
+	colliderMap: Map<number, Fruit | Bomb | Boundary> = new Map();
 
 	lastBumpSoundTime: DOMHighResTimeStamp = 0;
 
@@ -219,6 +223,35 @@ export class GameState {
 			})
 			.filter((text): text is ScoreTextData => text !== null);
 		this.setScoreTexts(newScoreTexts);
+
+		// Update bomb states
+		this.updateBombStates();
+	}
+
+	updateBombStates(): void {
+		// Update bomb rendering state and remove bombs that hit bottom
+		const activeBombs = this.bombs.filter((bomb) => {
+			if (bomb.isAtBottom()) {
+				this.colliderMap.delete(bomb.collider.handle);
+				bomb.destroy();
+				return false;
+			}
+			return true;
+		});
+		this.bombs = activeBombs;
+
+		const updatedBombStates = this.bombs
+			.map((bomb) => {
+				if (!bomb.body.isValid()) return null;
+				return {
+					id: bomb.id,
+					x: bomb.body.translation().x,
+					y: bomb.body.translation().y,
+					radius: bomb.radius
+				};
+			})
+			.filter((state): state is typeof updatedBombStates[0] => state !== null);
+		this.setBombsState(updatedBombStates);
 	}
 
 	checkCollisions() {
@@ -333,7 +366,61 @@ export class GameState {
 			}
 		});
 
-		// --- Step 2: Process Queued Merges ---
+		// --- Step 2: Process Queued Merges and Bomb Collisions ---
+		// First, handle bomb collisions
+		const fruitsToRemove: Fruit[] = [];
+		for (const bomb of this.bombs) {
+			for (const fruit of this.fruits) {
+				if (bomb.body.isValid() && fruit.body.isValid()) {
+					// Simple distance-based collision check
+					const bombPos = bomb.body.translation();
+					const fruitPos = fruit.body.translation();
+					const distance = Math.sqrt(
+						(bombPos.x - fruitPos.x) ** 2 + (bombPos.y - fruitPos.y) ** 2
+					);
+					if (distance < bomb.radius + fruit.radius) {
+						// Collision detected - mark fruit for removal
+						if (!fruitsToRemove.includes(fruit)) {
+							fruitsToRemove.push(fruit);
+						}
+					}
+				}
+			}
+		}
+
+		// Remove hit fruits and add their points
+		fruitsToRemove.forEach((fruit) => {
+			const fruitPos = fruit.body.translation();
+			const currentTime = performance.now();
+
+			// Add points for destroyed fruit
+			this.setScore(this.score + fruit.points);
+
+			// Create score text animation at fruit position
+			const newScoreTexts = [
+				...this.scoreTexts,
+				{
+					id: this.scoreTextIdCounter++,
+					x: fruitPos.x,
+					y: fruitPos.y,
+					score: fruit.points,
+					comboCount: 0, // No combo for bomb kills
+					startTime: currentTime,
+					duration: 1500
+				}
+			];
+			this.setScoreTexts(newScoreTexts);
+
+			// Clear death indicator if this was the dying fruit
+			if (this.gameOverFruitId === fruit.id) {
+				this.gameOverFruitId = null;
+			}
+
+			this.colliderMap.delete(fruit.collider.handle);
+			fruit.destroy();
+		});
+		this.fruits = this.fruits.filter((fruit) => !fruitsToRemove.includes(fruit));
+
 		if (mergePairs.length > 0) {
 			mergePairs.forEach(({ fruitA, fruitB }) => {
 				// mergeFruits will handle validity checks internally now
@@ -514,10 +601,14 @@ export class GameState {
 			this.fruits.forEach((fruit) => {
 				fruit.destroy();
 			});
+			this.bombs.forEach((bomb) => {
+				bomb.destroy();
+			});
 		}
 
 		// Clear internal state
 		this.fruits = [];
+		this.bombs = [];
 		this.lastTime = null;
 		this.mergeEffectIdCounter = 0;
 		this.scoreTextIdCounter = 0;
@@ -526,6 +617,7 @@ export class GameState {
 		this.currentComboCount = 0;
 		this.shakesRemaining = 3;
 		this.isShaking = false;
+		this.bombsRemaining = 2;
 		this.telemetry.reset();
 		this.leaderboard.reset();
 
@@ -535,6 +627,7 @@ export class GameState {
 		this.setFruitsState([]);
 		this.setMergeEffects([]);
 		this.setScoreTexts([]);
+		this.setBombsState([]);
 		this.setScore(0);
 		this.setStatus('uninitialized'); // Set to uninitialized, GameHeader will transition to playing
 		this.setCurrentFruitIndex(this.getRandomFruitIndex());
@@ -608,6 +701,10 @@ export class GameState {
 		this.scoreTexts = newScoreTexts;
 	}
 
+	setBombsState(newBombsState: typeof this.bombsState) {
+		this.bombsState = newBombsState;
+	}
+
 	useShake(): void {
 		if (this.shakesRemaining <= 0 || this.status !== 'playing') {
 			return;
@@ -632,6 +729,22 @@ export class GameState {
 				}
 			}
 		}
+	}
+
+	useBomb(): void {
+		if (this.bombsRemaining <= 0 || this.status !== 'playing' || !this.physicsWorld) {
+			return;
+		}
+
+		this.bombsRemaining--;
+
+		// Drop bomb at center-top of game area
+		const bombX = GAME_WIDTH / 2;
+		const bombY = GAME_HEIGHT * 0.1; // Top area
+		const bomb = new Bomb(bombX, bombY, this.physicsWorld);
+
+		this.bombs = [...this.bombs, bomb];
+		this.colliderMap.set(bomb.collider.handle, bomb);
 	}
 
 	destroy() {

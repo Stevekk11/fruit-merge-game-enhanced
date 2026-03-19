@@ -2,6 +2,7 @@
     const {gameState} = $props();
 
     let shakeButtonRef: HTMLButtonElement | null = null;
+	let bombButtonRef: HTMLButtonElement | null = null;
 
     function handleShakeClick() {
         if (gameState && gameState.shakesRemaining > 0 && gameState.status === 'playing') {
@@ -16,6 +17,20 @@
             }
         }
     }
+
+	function handleBombClick() {
+		if (gameState && gameState.bombsRemaining > 0 && gameState.status === 'playing') {
+			gameState.useBomb();
+
+			// Visual feedback: brief scale animation on button
+			if (bombButtonRef) {
+				bombButtonRef.classList.add('activated');
+				setTimeout(() => {
+					bombButtonRef?.classList.remove('activated');
+				}, 200);
+			}
+		}
+	}
 </script>
 
 <div class="abilities-content">
@@ -43,6 +58,28 @@
                     {gameState?.shakesRemaining ?? 0}/3
                 </div>
             </button>
+
+			<!-- Bomb Ability -->
+			<button
+					class="ability-button bomb-button"
+					class:disabled={gameState?.bombsRemaining === 0 || gameState?.status !== 'playing'}
+					onclick={handleBombClick}
+					bind:this={bombButtonRef}
+					aria-label={`Bomb ability. Remaining: ${gameState?.bombsRemaining ?? 0}`}
+					title="Drop a bomb to destroy all fruits it hits"
+			>
+				<div class="ability-icon">
+					<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+						<circle cx="12" cy="12" r="9"/>
+						<circle cx="12" cy="12" r="6" fill="currentColor"/>
+						<path d="M12 4v2M12 18v2" stroke-linecap="round"/>
+					</svg>
+				</div>
+				<div class="ability-label">Bomb</div>
+				<div class="ability-count">
+					{gameState?.bombsRemaining ?? 0}/2
+				</div>
+			</button>
         </div>
     </section>
 </div>
@@ -169,4 +206,3 @@
         text-align: center;
     }
 </style>
-

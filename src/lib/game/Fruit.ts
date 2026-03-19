@@ -29,7 +29,7 @@ export class Fruit {
 	public outOfBounds: boolean = false;
 	public isDying: boolean = false;
 	public deathStartTime: DOMHighResTimeStamp | null = null;
-	public wasAboveDangerLine: boolean = true; // Track if fruit was safe (above danger line)
+	public wasAboveDangerLine: boolean; // Track if fruit was safe (above danger line)
 	private readonly DEATH_TIMEOUT = 3000; // 3 seconds before game ends
 
 	constructor(fruitIndex: number, x: number, y: number, physicsWorld: World) {
@@ -51,6 +51,10 @@ export class Fruit {
 			.setLinearDamping(0.2)
 			.setAngularDamping(0.4);
 		this.body = this.physicsWorld.createRigidBody(bodyDesc);
+
+		// Initialize wasAboveDangerLine based on spawn position
+		const topOfFruitY = y - fruitData.radius;
+		this.wasAboveDangerLine = topOfFruitY >= GAME_OVER_HEIGHT;
 
 		const colliderDesc = ColliderDesc.ball(this.radius)
 			.setRestitution(0.25)
