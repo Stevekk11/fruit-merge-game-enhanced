@@ -489,11 +489,22 @@ export class GameState {
 		if (this.status === 'gameover') return;
 
 		for (const fruit of this.fruits) {
+			// Check if fruit is dying and set visual indicator
+			if (fruit.isDying) {
+				this.gameOverFruitId = fruit.id;
+			}
+
+			// Check if fruit should end the game
 			if (fruit.isOutOfBounds()) {
 				this.gameOverFruitId = fruit.id;
 				this.setStatus('gameover');
 				break;
 			}
+		}
+
+		// Clear death indicator if no fruit is dying
+		if (!this.fruits.some((fruit) => fruit.isDying)) {
+			this.gameOverFruitId = null;
 		}
 	}
 
@@ -615,8 +626,8 @@ export class GameState {
 			for (const fruit of this.fruits) {
 				if (fruit.body.isValid()) {
 					// Apply a random impulse to shake the fruit
-					const shakeForceX = (Math.random() - 0.5) * 0.3;
-					const shakeForceY = Math.random() * 0.3 - 0.1;
+					const shakeForceX = (Math.random() - 0.5) * 0.8;
+					const shakeForceY = Math.random() * 0.8 - 0.1;
 					fruit.body.applyImpulse({x: shakeForceX, y: shakeForceY}, true);
 				}
 			}

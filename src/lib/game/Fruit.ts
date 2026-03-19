@@ -8,8 +8,7 @@ import {
 	type Vector,
 	type World
 } from '@dimforge/rapier2d-compat'; // Or @dimforge/rapier3d
-
-import { FRUITS, GAME_OVER_HEIGHT } from '../constants';
+import {FRUITS, GAME_OVER_HEIGHT} from '../constants';
 
 interface FruitBodyUserData {
 	fruitInstance: Fruit;
@@ -28,6 +27,10 @@ export class Fruit {
 	public readonly physicsWorld: World; // Reference to the physics body
 	public startOutOfBounds: DOMHighResTimeStamp | null = null;
 	public outOfBounds: boolean = false;
+	public isDying: boolean = false;
+	public deathStartTime: DOMHighResTimeStamp | null = null;
+	public wasAboveDangerLine: boolean = true; // Track if fruit was safe (above danger line)
+	private readonly DEATH_TIMEOUT = 3000; // 3 seconds before game ends
 
 	constructor(fruitIndex: number, x: number, y: number, physicsWorld: World) {
 		const fruitData = FRUITS[fruitIndex];
@@ -80,22 +83,32 @@ export class Fruit {
 	}
 
 	isOutOfBounds(): boolean {
-		// otherwise, set the out of bounds flags
+		// Check if fruit has crossed into death area
 		const topOfFruitY = this.body.translation().y - this.radius;
+		const isInDangerZone = topOfFruitY < GAME_OVER_HEIGHT;
 
-		if (this.body.isValid() && topOfFruitY < GAME_OVER_HEIGHT) {
-			// we've been out of bounds for a while.
-			if (this.startOutOfBounds && performance.now() - this.startOutOfBounds > 1000) {
-				return true;
-			}
+		// Only trigger death animation if crossing FROM safe TO danger (not on spawn)
+		if (isInDangerZone && this.wasAboveDangerLine && !this.isDying) {
+			// Fruit just crossed from safe zone to danger zone
+			this.isDying = true;
+			this.deathStartTime = performance.now();
+		}
 
-			// mark that we have begun being out of bounds
-			// if not already marked
-			if (!this.startOutOfBounds) {
-				this.startOutOfBounds = performance.now();
+		// Update position tracking
+		this.wasAboveDangerLine = !isInDangerZone;
+
+		// If in danger zone, check if death timeout has elapsed
+		if (this.isDying && isInDangerZone) {
+			if (this.deathStartTime && performance.now() - this.deathStartTime > this.DEATH_TIMEOUT) {
+				return true; // Game over after 3 seconds
 			}
-		} else {
-			this.startOutOfBounds = null;
+			return false; // Still in death animation
+		}
+
+		// If fruit has left danger zone, reset death state
+		if (!isInDangerZone && this.isDying) {
+			this.isDying = false;
+			this.deathStartTime = null;
 		}
 
 		return false;
