@@ -85,6 +85,8 @@ export class GameState {
 	shakesRemaining: number = $state(3);
 	isShaking: boolean = $state(false);
 	bombsRemaining: number = $state(2);
+	popAllRemaining: number = $state(2);
+	selectedFruitTypeIndex: number | null = $state(null);
 
 	// Telemetry & API
 	telemetry: TelemetryState = new TelemetryState();
@@ -618,6 +620,8 @@ export class GameState {
 		this.shakesRemaining = 3;
 		this.isShaking = false;
 		this.bombsRemaining = 2;
+		this.popAllRemaining = 2;
+		this.selectedFruitTypeIndex = null;
 		this.telemetry.reset();
 		this.leaderboard.reset();
 
@@ -705,6 +709,10 @@ export class GameState {
 		this.bombsState = newBombsState;
 	}
 
+	setSelectedFruitTypeIndex(index: number | null) {
+		this.selectedFruitTypeIndex = index;
+	}
+
 	useShake(): void {
 		if (this.shakesRemaining <= 0 || this.status !== 'playing') {
 			return;
@@ -745,6 +753,68 @@ export class GameState {
 
 		this.bombs = [...this.bombs, bomb];
 		this.colliderMap.set(bomb.collider.handle, bomb);
+	}
+
+	usePopAll(fruitIndex: number): void {
+		if (this.popAllRemaining <= 0 || this.status !== 'playing') {
+			return;
+		}
+
+		this.popAllRemaining--;
+
+		// Find all fruits matching this type
+		const fruitsToRemove = this.fruits.filter((fruit) => fruit.fruitIndex === fruitIndex);
+
+		// Destroy fruits one by one with 0.5s delay
+		fruitsToRemove.forEach((fruit, index) => {
+			setTimeout(() => {
+				// Safety check: ensure fruit physics body is still valid
+				// It might have been destroyed by merge, bomb, or game reset during the delay
+				if (!fruit.body.isValid()) {
+					return;
+				}
+
+				// Play pop sound
+				if (this.audioManager) {
+					const popRate = DROP_PITCH_RATES[fruit.fruitIndex] ?? 1.0;
+					this.audioManager.playSound('pop', {volume: 1, rate: popRate});
+				}
+
+				const fruitPos = fruit.body.translation();
+
+				// Add points for destroyed fruit
+				this.setScore(this.score + fruit.points);
+
+				// Create score text animation at fruit position
+				const newScoreTexts = [
+					...this.scoreTexts,
+					{
+						id: this.scoreTextIdCounter++,
+						x: fruitPos.x,
+						y: fruitPos.y,
+						score: fruit.points,
+						comboCount: 0, // No combo for pop all
+						startTime: performance.now(),
+						duration: 1500
+					}
+				];
+				this.setScoreTexts(newScoreTexts);
+
+				// Clear death indicator if this was the dying fruit
+				if (this.gameOverFruitId === fruit.id) {
+					this.gameOverFruitId = null;
+				}
+
+				this.colliderMap.delete(fruit.collider.handle);
+				fruit.destroy();
+
+				// Remove from fruits array immediately to prevent physics/logic errors with "ghost" fruits
+				this.fruits = this.fruits.filter((f) => f !== fruit);
+			}, index * 500); // 0.5s delay between each fruit
+		});
+
+		// Clear selection immediately
+		this.selectedFruitTypeIndex = null;
 	}
 
 	destroy() {
