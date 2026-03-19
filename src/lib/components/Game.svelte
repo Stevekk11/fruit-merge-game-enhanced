@@ -18,6 +18,7 @@
   import ScoreText from './ScoreText.svelte';
   import GameEntity from './GameEntity.svelte';
   import GameSidebar from './GameSidebar.svelte';
+  import GameAbilities from './GameAbilities.svelte';
   import GameHeader from './GameHeader.svelte';
   import GameOverModal from './GameOverModal.svelte';
   import DebugMenu from '../components/DebugMenu.svelte';
@@ -194,6 +195,7 @@ setContext('generateScreenshot', generateScreenshot);
     <!-- Game Container -->
     <div
       class="gameplay-area"
+      class:shaking={gameState?.isShaking}
       bind:this={gameRef}
       onpointerup={handleClick}
       onkeydown={handleKeyDown}
@@ -272,6 +274,11 @@ setContext('generateScreenshot', generateScreenshot);
         onClose={handleGameOverClose}
       />
     {/if}
+  </div>
+
+  <!-- Separate Abilities Panel -->
+  <div class="abilities-panel">
+    <GameAbilities {gameState}/>
   </div>
 
   {#if showDebugMenu && gameState}
@@ -373,7 +380,7 @@ setContext('generateScreenshot', generateScreenshot);
 
     @media (aspect-ratio < 0.65) {
       grid-template-columns: 1fr;
-      grid-template-areas: "sidebar" "gameplay" "header";
+      grid-template-areas: "header" "gameplay" "sidebar";
     }
 
     :global(*) {
@@ -509,5 +516,62 @@ setContext('generateScreenshot', generateScreenshot);
 
   .header {
     grid-area: header;
+  }
+
+  .game-container {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+
+  .game {
+    flex: 1;
+    min-width: 0;
+  }
+
+  :global(.abilities-panel) {
+    width: 140px;
+    flex-shrink: 0;
+    border-radius: 1em;
+    background: var(--color-background);
+    border: 1px solid var(--color-border);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  .gameplay-area.shaking {
+    animation: shake-game 0.15s cubic-bezier(0.36, 0, 0.66, 1);
+  }
+
+  @keyframes shake-game {
+    0%, 100% {
+      transform: translate(0, 0);
+    }
+    10% {
+      transform: translate(-2px, -2px);
+    }
+    20% {
+      transform: translate(2px, 2px);
+    }
+    30% {
+      transform: translate(-2px, 2px);
+    }
+    40% {
+      transform: translate(2px, -2px);
+    }
+    50% {
+      transform: translate(-2px, 0);
+    }
+    60% {
+      transform: translate(0, 2px);
+    }
+    70% {
+      transform: translate(2px, 0);
+    }
+    80% {
+      transform: translate(-1px, -1px);
+    }
+    90% {
+      transform: translate(1px, 1px);
+    }
   }
 </style>

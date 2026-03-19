@@ -78,6 +78,10 @@ export class GameState {
 	mergeEffects: MergeEffectData[] = $state([]);
 	scoreTexts: ScoreTextData[] = $state([]);
 
+	// Abilities
+	shakesRemaining: number = $state(3);
+	isShaking: boolean = $state(false);
+
 	// Telemetry & API
 	telemetry: TelemetryState = new TelemetryState();
 	leaderboard: LeaderboardClient = new LeaderboardClient();
@@ -509,6 +513,8 @@ export class GameState {
 		this.dropCount = 0;
 		this.lastMergeTime = 0;
 		this.currentComboCount = 0;
+		this.shakesRemaining = 3;
+		this.isShaking = false;
 		this.telemetry.reset();
 		this.leaderboard.reset();
 
@@ -589,6 +595,32 @@ export class GameState {
 
 	setScoreTexts(newScoreTexts: ScoreTextData[]) {
 		this.scoreTexts = newScoreTexts;
+	}
+
+	useShake(): void {
+		if (this.shakesRemaining <= 0 || this.status !== 'playing') {
+			return;
+		}
+
+		this.shakesRemaining--;
+		this.isShaking = true;
+
+		// Reset shake animation after 600ms
+		setTimeout(() => {
+			this.isShaking = false;
+		}, 600);
+
+		// Apply shake impulse to all fruits
+		if (this.physicsWorld) {
+			for (const fruit of this.fruits) {
+				if (fruit.body.isValid()) {
+					// Apply a random impulse to shake the fruit
+					const shakeForceX = (Math.random() - 0.5) * 0.3;
+					const shakeForceY = Math.random() * 0.3 - 0.1;
+					fruit.body.applyImpulse({x: shakeForceX, y: shakeForceY}, true);
+				}
+			}
+		}
 	}
 
 	destroy() {
