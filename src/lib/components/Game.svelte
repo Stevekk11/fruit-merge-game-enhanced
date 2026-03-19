@@ -302,8 +302,8 @@ setContext('generateScreenshot', generateScreenshot);
     --max-font-size-px: 16;
 
     container-type: inline-size;
-    width: clamp(100px, 100%, 700px);
-    max-width: calc(100svh * 2 / 3);
+    width: clamp(100px, 100%, 1050px);
+    max-width: calc(100svh * 1);
 
     @media (aspect-ratio < 0.65) {
       max-width: calc(100svh * 1 / 2);
